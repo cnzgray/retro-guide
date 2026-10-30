@@ -45,13 +45,12 @@ Retroid Pocket G2（Android 开源掌机）上边玩边查的单页攻略，覆�
 | `src/games/minish.js`、`topx.js`、`eternia.js` | 攻略数据，一个游戏一个文件，`export default { ... }` |
 | `src/names.js` | 译名单点：日文原名 → 汉化译名 |
 | `tools/build.mjs` | 零依赖 Node 脚本：拼装、校验、`--check`、`--rename` |
-| `.github/workflows/check.yml` | CI：产物与源码不一致就红 |
+| `.github/workflows/check.yml` | CI：产物与源码不一致就红；`main` 校验通过后部署 Pages |
 | `top_x_ce_walkthrough.md` | 《幻想传说 X》流程整理稿（552 行），页面内容的**事实源**之一 |
 | `docs/HANDOFF.md` | 交接文档：设计约定、已知风险、待办、验证方法 |
 | `LICENSE` | MIT（只覆盖代码，不含攻略正文） |
 | `LICENSE-CONTENT.md` | 攻略正文许可：CC BY-NC-SA 4.0、来源署名、免责 |
 | `AGENTS.md` | 给 AI 协作者的硬约束、改动流程、完成标准 |
-| `.nojekyll` | 让 GitHub Pages 跳过 Jekyll 处理 |
 | `README.md` | 本文件 |
 
 ## 构建
@@ -79,7 +78,7 @@ python3 -m http.server 8765
 
 ## 发布（GitHub Pages）
 
-已上线：<https://cnzgray.github.io/retro-guide/>，仓库 `cnzgray/retro-guide`（公开），Pages 走 `main` / root，HTTPS 已强制。改完 `git push` 后约 1 分钟自动重建。
+已上线：<https://cnzgray.github.io/retro-guide/>，仓库 `cnzgray/retro-guide`（公开），Pages 走 GitHub Actions，HTTPS 已强制。`git push` 到 `main` 后先跑 `--check`，通过才部署，且只发布 `index.html`；校验失败时线上保持上一个版本。
 
 ## 技术结构
 

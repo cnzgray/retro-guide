@@ -32,7 +32,7 @@
 
 ## 发布
 
-`git push` 到 `main` 后约 1 分钟 GitHub Pages 自动重建（`main` / root，产物 `index.html` 已在仓库根）。
+`git push` 到 `main` 后 CI 先跑 `--check`，通过才由 GitHub Actions 部署 Pages，且只发布 `index.html`；校验失败时线上保持上一个版本。
 
 ## 深入
 
