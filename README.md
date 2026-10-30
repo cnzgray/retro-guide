@@ -1,5 +1,7 @@
 # retro-guide · 掌机离线攻略速查
 
+![vibe coded](https://img.shields.io/badge/vibe_coded-100%25-ff69b4?style=flat-square)
+
 Retroid Pocket G2（Android 开源掌机）上边玩边查的单页攻略，覆盖两作：
 
 - **GBA《塞尔达传说：缩小帽》** —— 16 章流程、12 条卡关急救、23 个收集项、6 个 Boss
@@ -8,6 +10,18 @@ Retroid Pocket G2（Android 开源掌机）上边玩边查的单页攻略，覆�
 老游戏没有任务指引，网上攻略又散、又旧、图还全挂。所以这里交付的不是文章，而是一个**单文件、零外链、`file://` 直接打开**的速查页：章节卡折叠 + 进度勾选 + 卡关 Q&A + 收集清单 + Boss 速查 + 全站搜索，进度存本地。
 
 线上版：<https://cnzgray.github.io/retro-guide/>（GitHub Pages，HTTP 自动跳 HTTPS）
+
+## Vibe Coding 实录
+
+页面、构建脚本、这份 README，全程对着 AI 说人话做出来的。分工写在明面上，免得互相甩锅：
+
+| 谁 | 干了什么 |
+|---|---|
+| **人** | 定需求（掌机上边玩边查，不要文章）、拍板配色与信息层级、核对流程与译名、决定什么不写（宁缺不编） |
+| **AI** | 写渲染逻辑与构建脚本、排版与文案初稿、把攻略事实逐条查证后回写、自己跑浏览器回归 |
+| **不 vibe 的部分** | 单文件、零外链、章节 id 不改名——三条硬约束，人和 AI 都不能为了「顺手」推翻 |
+
+效果如何自己判：`node tools/build.mjs --check` 全绿，CI 拦漂移，页面 77 KB 零依赖。
 
 ## 文件
 
