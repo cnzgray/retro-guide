@@ -17,6 +17,8 @@ Retroid Pocket G2（Android 开源掌机）上边玩边查的单页攻略，覆�
 | `top_x_ce_walkthrough.md` | 《幻想传说 X》流程整理稿（552 行），页面内容的**事实源**之一 |
 | `docs/HANDOFF.md` | 交接文档：设计约定、已知风险、待办、验证方法 |
 | `LICENSE` | MIT（只覆盖代码，不含攻略正文） |
+| `LICENSE-CONTENT.md` | 攻略正文许可：CC BY-NC-SA 4.0、来源署名、免责 |
+| `AGENTS.md` | 给 AI 协作者的硬约束、改动流程、完成标准 |
 | `.nojekyll` | 让 GitHub Pages 跳过 Jekyll 处理 |
 | `README.md` | 本文件 |
 
@@ -68,7 +70,7 @@ GAMES[]                     游戏
 ## 授权与免责
 
 - **代码**（HTML 结构 / CSS / JS）：MIT，见 `LICENSE`。
-- **攻略正文**：二次整理内容，不适用 MIT。以 CC BY-NC-SA 4.0 方式共享——署名、非商业、相同方式共享。来源为 GameFAQs《The Minish Cap》攻略与 なりきりダンジョンX まとめwiki，正文为中文重述。
+- **攻略正文**：CC BY-NC-SA 4.0——署名、非商业、相同方式共享。完整条款、原始来源与不涵盖的内容见 `LICENSE-CONTENT.md`。
 - **不收录**：游戏本体、ROM、汉化补丁、官方图像或攻略本扫描。发现被添加请直接回滚。
 - 游戏名称、角色、地名等著作权与商标归任天堂 / 万代南梦宫等各自权利人所有；本项目为非官方同人作品，与发行方无关。
 
