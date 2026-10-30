@@ -4,18 +4,25 @@
 
 - **产物单文件**：交付物是 `index.html`，由 `src/` 生成，零外链，`file://` 直接能开。
 - **不手改产物**：改数据动 `src/games/*.js`，改结构动 `src/shell.html`，然后 `node tools/build.mjs`。CI 跑 `--check`，产物与源码不一致会红。
-- **章节 id 是进度键**：`c1`–`c16`、`t1`–`t23` 永不改名。构建只校验 id 连续不重复，校验不出“换了别的 id 再重排”——那等于清空玩家进度。
+- **章节 id 是进度键**：`c1`–`c16`、`t1`–`t23`、`e1`–`e19` 永不改名。构建只校验 id 连续不重复，校验不出“换了别的 id 再重排”——那等于清空玩家进度。
 - **译名只在 `src/names.js`**：正文写 `克雷斯（<i class='jp'>クレス</i>）`。校对发现实际用词不同，跑 `node tools/build.mjs --rename 旧=新`，正文与译名表一次改完。
 
 ## 改内容
 
-1. `src/games/minish.js` / `topx.js`，一个游戏一个文件，`export default { ... }`，字段见 `README.md`。
+1. `src/games/*.js`，一个游戏一个文件，`export default { ... }`，字段见 `README.md`。
 2. `build()` 切游戏时整体重渲染；勾选只走 `renderProgress / renderToc / updateNext` 局部更新——改成整页重绘会让滚动位置跳动。
 3. 时限要素（过了就没的事件）写进 `warn[]`，渲染成黄色 `.warn`；这是本页核心价值，别降级成普通步骤。
-4. 主题色只动两组 CSS 变量：`body`（缩小帽 `#56dd91` / `#ffc861`）与 `body[data-game="topx"]`（幻想传说 `#849cff` / `#ffcf70`）。
+4. 主题色只动 CSS 变量：`body`（缩小帽 `#56dd91` / `#ffc861`）、`body[data-game="topx"]`（幻想传说 `#849cff` / `#ffcf70`）、`body[data-game="eternia"]`（永恒传说 `#b48cff` / `#7ee0ff`）；同时改 `THEME_BG` 里对应的地址栏取色。
 5. `node tools/build.mjs` 生成 `index.html`，源码与产物一起提交。
 
-完成标准：`node tools/build.mjs --check` 退出 0；起 `python3 -m http.server 8765` 后确认两作章节数 16 / 23、搜中文名命中、勾选后刷新仍保留、切换后 `--acc` 正确、窄屏（≤420px）无横向溢出、页脚在两作下都可见。
+完成标准：`node tools/build.mjs --check` 退出 0；起 `python3 -m http.server 8765` 后确认三作章节数 16 / 23 / 19、搜中文名命中、勾选后刷新仍保留、切换后 `--acc` 正确、窄屏（≤420px）无横向溢出、页脚在三作下都可见。
+
+## 新增一作
+
+1. 新建 `src/games/<id>.js`，`id` 用小写英文；章节 id 用 `<首字母><序号>`，从 1 连续。
+2. `src/shell.html` 加一段 `body[data-game="<id>"]` 主题变量，`THEME_BG` 加同 id 的底色。
+3. `tools/build.mjs` 的 `ORDER` 决定标签页顺序，不写就排在末尾。
+4. 人名进 `src/names.js`；道具名、术名没有可靠中文就用日文灰字，别臆造。
 
 ## 内容红线
 

@@ -15,6 +15,8 @@ const GAMES_DIR = join(ROOT, "src/games");
 const NAMES_PATH = join(ROOT, "src/names.js");
 const OUT = join(ROOT, "index.html");
 const PLACEHOLDER = "/* __GAMES__ */";
+// 标签页顺序（未列出的按文件名排在后面）
+const ORDER = ["minish", "topx", "eternia"];
 const JP = (n) => `<i class='jp'>${n}</i>`;
 
 const args = process.argv.slice(2);
@@ -99,13 +101,18 @@ function build() {
   const files = gameFiles();
   if (!files.length) throw new Error("src/games/ 下没有游戏文件");
 
-  const bodies = files.map((f) => {
+  const parsed = files.map((f) => {
     const g = readGame(f);
     validate(f.slice(ROOT.length + 1), g.body, problems);
-    return g.body;
+    const id = (g.body.match(/id:"([a-z0-9]+)"/) || [])[1] || "";
+    return { id, body: g.body };
+  });
+  parsed.sort((a, b) => {
+    const ia = ORDER.indexOf(a.id), ib = ORDER.indexOf(b.id);
+    return (ia < 0 ? ORDER.length : ia) - (ib < 0 ? ORDER.length : ib) || a.id.localeCompare(b.id);
   });
 
-  const data = bodies.join(",\n");
+  const data = parsed.map((g) => g.body).join(",\n");
   const shell = readFileSync(SHELL, "utf8");
   if (!shell.includes(PLACEHOLDER)) throw new Error(`src/shell.html 缺少占位符 ${PLACEHOLDER}`);
   const html = shell.replace(PLACEHOLDER, () => data);
