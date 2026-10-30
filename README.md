@@ -13,7 +13,12 @@ Retroid Pocket G2（Android 开源掌机）上边玩边查的单页攻略，覆�
 
 | 文件 | 说明 |
 |---|---|
-| `index.html` | 唯一交付物，也是站点首页。纯 HTML/CSS/JS，约 76 KB，无任何外链 |
+| `index.html` | **产物**，也是站点首页：纯 HTML/CSS/JS，约 76 KB，无任何外链。由 `src/` 生成，不手改 |
+| `src/shell.html` | 模板：CSS + 全部渲染逻辑，数据位是占位符 `/* __GAMES__ */` |
+| `src/games/minish.js`、`src/games/topx.js` | 攻略数据，一个游戏一个文件，`export default { ... }` |
+| `src/names.js` | 译名单点：日文原名 → 汉化译名 |
+| `tools/build.mjs` | 零依赖 Node 脚本：拼装、校验、`--check`、`--rename` |
+| `.github/workflows/check.yml` | CI：产物与源码不一致就红 |
 | `top_x_ce_walkthrough.md` | 《幻想传说 X》流程整理稿（552 行），页面内容的**事实源**之一 |
 | `docs/HANDOFF.md` | 交接文档：设计约定、已知风险、待办、验证方法 |
 | `LICENSE` | MIT（只覆盖代码，不含攻略正文） |
@@ -21,6 +26,17 @@ Retroid Pocket G2（Android 开源掌机）上边玩边查的单页攻略，覆�
 | `AGENTS.md` | 给 AI 协作者的硬约束、改动流程、完成标准 |
 | `.nojekyll` | 让 GitHub Pages 跳过 Jekyll 处理 |
 | `README.md` | 本文件 |
+
+## 构建
+
+```bash
+node tools/build.mjs            # 由 src/ 生成 index.html（源码与产物一起提交）
+node tools/build.mjs --check    # CI 同款：产物漂移或校验不过则退出 1
+node tools/build.mjs --rename 敏特=敏朵   # 正文 + names.js 全量改译名
+node tools/build.mjs --verbose  # 附带打印译名覆盖率提示
+```
+
+`--check` 拦三类问题：章节 id 不连续/重复、配对写法里的中文与 `src/names.js` 不一致、产物里出现外链资源。它拦不住“把 id 改成别的再重排”，那只能靠人记住进度键的约定。
 
 ## 使用
 
@@ -40,7 +56,7 @@ python3 -m http.server 8765
 
 ## 技术结构
 
-内容与渲染都在同一个 `<script>` 里，数据集中在 `const GAMES = [...]`。
+源码在 `src/`，构建后合并成单个 `<script>`：数据在 `src/games/*.js`，渲染逻辑在 `src/shell.html`。
 
 ```
 GAMES[]                     游戏
@@ -66,6 +82,8 @@ GAMES[]                     游戏
 4. **时限要素单独标黄**（`.warn`）。这类老游戏最劝退的地方，也是本页核心价值。
 5. **主题色按游戏切换**，全部走 CSS 变量：`body` = 缩小帽（海拉尔绿 `#56dd91` + 金 `#ffc861`），`body[data-game="topx"]` = 幻想传说（时空蓝 `#849cff` + 神枪金 `#ffcf70`）。改配色只动这两组变量。
 6. **不拆多页**。单文件是核心约束：拆成共享 CSS/JS 的多页应用，拷贝方式就从"拷一个文件"变成"拷一个目录"。游戏数涨到 4–5 个、单文件超过 300 KB 时再考虑拆，且要拆成**每个游戏各自自包含的一页**，不是共享资源的多页站。
+7. **`index.html` 是产物**。改 `src/` 后跑 `node tools/build.mjs`；直接改产物会被 `--check` 判漂移，下一次构建覆盖掉。
+8. **译名只有一处定义**。`src/names.js` 是译名的唯一事实源，正文配对写法必须与之一致；改译名用 `--rename`，别手工全局替换（会漏掉 `<b>` 包裹的写法）。
 
 ## 授权与免责
 
@@ -78,6 +96,7 @@ GAMES[]                     游戏
 
 回归检查清单（当前实测：章节 16 / 23、Q&A 12 / 13、收集项 23 / 34、Boss 6 / 18）：
 
+0. `node tools/build.mjs --check` 退出 0（产物无漂移、无译名/结构问题）；
 1. 两作章节数正确，切换游戏无控制台报错；
 2. 搜索中文名（如「克雷斯」）能命中并展开对应章节；
 3. 勾选章节 → 进度条 / 「现在该做」更新 → 刷新后仍保留；

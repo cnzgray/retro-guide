@@ -1,19 +1,21 @@
 # AGENTS.md
 
-单文件离线攻略页（掌机上手边查）。动手前先满足三条硬约束：
+单文件离线攻略页（掌机上手边查）。四条硬约束：
 
-- **单文件**：交付物只有 `index.html`。零外链——不引 CDN、字体、图片外链；`file://` 直接能开。上线只是分发方式，不改变这条。
-- **中文优先**：人名、地名、道具、术技用汉化译名；日文原名放灰色小字，写法 `克雷斯（<i class='jp'>クレス</i>）`。
-- **章节 id 是进度键**：`c1`–`c16`、`t1`–`t23` 永不改名。改名会把玩家已勾的进度清空。
+- **产物单文件**：交付物是 `index.html`，由 `src/` 生成，零外链，`file://` 直接能开。
+- **不手改产物**：改数据动 `src/games/*.js`，改结构动 `src/shell.html`，然后 `node tools/build.mjs`。CI 跑 `--check`，产物与源码不一致会红。
+- **章节 id 是进度键**：`c1`–`c16`、`t1`–`t23` 永不改名。构建只校验 id 连续不重复，校验不出“换了别的 id 再重排”——那等于清空玩家进度。
+- **译名只在 `src/names.js`**：正文写 `克雷斯（<i class='jp'>クレス</i>）`。校对发现实际用词不同，跑 `node tools/build.mjs --rename 旧=新`，正文与译名表一次改完。
 
 ## 改内容
 
-1. 在 `index.html` 的 `const GAMES = [...]` 里改；数据与渲染同处一个 `<script>`。
-2. `build()` 负责切游戏时整体重渲染；勾选只走 `renderProgress / renderToc / updateNext` 做局部更新——改成整页重绘会让滚动位置跳动。
-3. 时限要素（过了就没的事件）写进 `warn[]`，它渲染成黄色警告框 `.warn`；这是本页的核心价值，别降级成普通步骤。
-4. 主题色只动两组 CSS 变量：`body`（缩小帽：`#56dd91` / `#ffc861`）与 `body[data-game="topx"]`（幻想传说：`#849cff` / `#ffcf70`）。
+1. `src/games/minish.js` / `topx.js`，一个游戏一个文件，`export default { ... }`，字段见 `README.md`。
+2. `build()` 切游戏时整体重渲染；勾选只走 `renderProgress / renderToc / updateNext` 局部更新——改成整页重绘会让滚动位置跳动。
+3. 时限要素（过了就没的事件）写进 `warn[]`，渲染成黄色 `.warn`；这是本页核心价值，别降级成普通步骤。
+4. 主题色只动两组 CSS 变量：`body`（缩小帽 `#56dd91` / `#ffc861`）与 `body[data-game="topx"]`（幻想传说 `#849cff` / `#ffcf70`）。
+5. `node tools/build.mjs` 生成 `index.html`，源码与产物一起提交。
 
-完成标准：起 `python3 -m http.server 8765`，在浏览器里逐项确认——两作章节数 16 / 23、搜中文名命中、勾选后刷新仍保留、切换后 `--acc` 正确、窄屏（≤420px）无横向溢出、页脚在两作下都可见。
+完成标准：`node tools/build.mjs --check` 退出 0；起 `python3 -m http.server 8765` 后确认两作章节数 16 / 23、搜中文名命中、勾选后刷新仍保留、切换后 `--acc` 正确、窄屏（≤420px）无横向溢出、页脚在两作下都可见。
 
 ## 内容红线
 
@@ -23,9 +25,10 @@
 
 ## 发布
 
-`git push` 到 `main` 后约 1 分钟 GitHub Pages 自动重建（`main` / root）。
+`git push` 到 `main` 后约 1 分钟 GitHub Pages 自动重建（`main` / root，产物 `index.html` 已在仓库根）。
 
 ## 深入
 
 - `docs/HANDOFF.md`：设计取舍、已知风险、待办（译名对齐优先级最高）。
-- `README.md`：数据模型字段、主题变量、Pages 发布与验证清单。
+- `README.md`：字段模型、主题变量、构建与验证、Pages 发布。
+- `src/shell.html`：CSS 与全部渲染逻辑；数据占位符是 `/* __GAMES__ */`。
