@@ -3,6 +3,11 @@ export default {
   title:"幻想传说 X（Cross Edition）",
   sub:"PSP · 2010 年 · 收录于《换装迷宫 X》，日版原名 テイルズ オブ ファンタジア クロスエディション",
   short:"幻想传说X · PSP",
+  tabs:"流程 / 系统 / 术技",
+  order:2,
+  accent:"#849cff",
+  sources:["なりきりダンジョンX まとめwiki"],
+  unverified:["「罗迪」临时加入与离队的时机来自日文 wiki，未二次核实"],
   metas:["<b>主线</b> 30–40 小时","<b>语言</b> 中文（CHS 汉化版）","<b>战斗</b> LMBS 线性动作","<b>队伍</b> 本作最多 5 人"],
   intro:[
     "这是 2010 年 PSP《换装迷宫 X》里附带的《幻想传说》重制版（Cross Edition）：全语音、新增术技与剧情、队伍扩到 5 人，但攻略几乎只有日文 wiki，中文资料又散又少。",

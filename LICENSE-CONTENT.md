@@ -27,6 +27,8 @@
 |---|---|
 | [GameFAQs · The Legend of Zelda: The Minish Cap FAQ](https://gamefaqs.gamespot.com/gba/920670-the-legend-of-zelda-the-minish-cap/faqs/47138) | 缩小帽流程、Boss 机制 |
 | [なりきりダンジョンX まとめwiki](https://w.atwiki.jp/naridan-x/)（页 185–188） | 幻想传说 X 流程表、时限要素、术技数据 |
+| テイルズオブエターニア攻略はココ！（链接待补） | 永恒传说流程、时限要素 |
+| QiQoe（链接待补） | 永恒传说流程、时限要素 |
 
 上述站点的原文版权归各自作者所有，本项目仅作事实性整理与再表述。
 

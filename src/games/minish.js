@@ -3,6 +3,11 @@ export default {
   title:"塞尔达传说：缩小帽",
   sub:"The Minish Cap · GBA · 2004 年",
   short:"缩小帽 · GBA",
+  tabs:"流程 / 卡关 / 收集",
+  order:1,
+  accent:"#56dd91",
+  sources:["GameFAQs"],
+  unverified:["c4 的「心之碎片 ×3」为近似值，未逐一核对全集","最终战 Vaati 三连战的各阶段机制未核实，描述刻意笼统"],
   metas:["<b>主线</b> 12–15 小时","<b>全收集</b> 25 小时+","<b>模拟器</b> mGBA / VBA-M","<b>难度</b> 低，卡人靠“找不到路”"],
   intro:[
     "这是 GBA 末期最精致的一作塞尔达：画面、音乐、谜题都在线，唯一的“劝退点”是它没有任何任务指引——很多门要变小才看得见，很多路要先回头。",

@@ -1,11 +1,11 @@
-# Handoff — 复古掌机离线攻略页（retro-guide.html）
+# Handoff — 复古掌机离线攻略页
 
 > 交接时间：2026-10-30。接手者请先读本文件，再决定要不要读产物源码。
 > 用户偏好已写入全局记忆（设备、离线/单文件偏好、**不看日文**），此处不重复。
 
 ## 1. 背景与目标
 
-用户有一台 **Retroid Pocket G2**（Android 开源掌机），想补 GBA《塞尔达传说：缩小帽》和 PSP《幻想传说 X（Cross Edition）》。他的核心痛点是：**老游戏没有任务指引，网上攻略散、旧、图全挂**，所以玩不进去。
+用户有一台 **Retroid Pocket G2**（Android 开源掌机），想补 GBA《塞尔达传说：缩小帽》、PSP《幻想传说 X（Cross Edition）》和 PS1《永恒传说》。他的核心痛点是：**老游戏没有任务指引，网上攻略散、旧、图全挂**，所以玩不进去。
 
 已交付的解法不是文章，而是一个**单文件、离线、边玩边查**的攻略页。
 
@@ -13,10 +13,8 @@
 
 | 文件 | 说明 |
 |---|---|
-| `retro-guide.html` | 主交付物，约 76KB，纯 HTML/CSS/JS，零外链，`file://` 可直接打开 |
+| `index.html` | 主交付物，由 `src/` 生成，纯 HTML/CSS/JS，零外链，`file://` 可直接打开 |
 | `top_x_ce_walkthrough.md` | 《幻想传说 X》日文 wiki 整理稿（552 行），含第 1 部逐项宝箱清单、时限要素速查表。是内容回溯的**事实源** |
-
-规模：缩小帽 16 章 / 12 条卡关 Q&A / 23 个清单项 / 6 个 Boss；幻想传说 X 23 章 / 13 条 Q&A / 34 个清单项 / 18 个 Boss。
 
 功能：章节卡（可折叠、✓ 标记完成、顶部进度条、"现在该做第几章"）、卡关急救折叠 Q&A、可勾选收集清单、Boss 速查表、顶栏搜索（同时搜章节/Q&A/清单/Boss）。进度存 `localStorage`（key `retroGuide.v1`），选中游戏也会记住。
 
@@ -26,14 +24,13 @@
 2. **单文件、零外链**。不能引入 CDN、字体、图片外链——文件会被拷进掌机，必须离线可用。
 3. **信息密度优先于文采**。每章 = 目标 + 分步 + 该拿的东西 + 易漏/卡点 + Boss 解法，不写叙事。
 4. **时限要素必须单独标黄**（`.warn`）。这是这类老游戏最劝退的部分，也是这个页面的核心价值。
-5. 主题色按游戏切换：`body` 默认 = 缩小帽（海拉尔绿 `#56dd91` + 金 `#ffc861`）；`body[data-game="topx"]` = 幻想传说（时空蓝 `#849cff` + 神枪金 `#ffcf70`）。全部走 CSS 变量（`--acc`/`--acc2`/`--a04`…`--a70`/`--glow1` 等），**改配色只动这两组变量**。
+5. 主题色按游戏切换：`body` 是默认主题（缩小帽），其余每作一个 `body[data-game="<id>"]` 块。全部走 CSS 变量（`--acc`/`--acc2`/`--a04`…`--a70`/`--glow1` 等），**改配色只动对应块**。
 
 ## 4. 技术结构（改内容看这里）
 
-- 数据与渲染都在同一个 `<script>` 里：`const GAMES = [ {...minish}, {...topx} ]`。
-- 每个游戏的字段：`id / title / sub / short / metas / intro / chapters[] / qa[] / checks[] / bosses[]`。
+- 数据在 `src/games/*.js`，渲染在 `src/shell.html`，构建后合并成 `index.html`。字段模型见 `README.md`。
 - 章节字段：`{id, n, title, area, goal, steps[], items[], warn[], boss:{name,tip}, tip}`。`steps/goal/warn/boss.tip` 按 HTML 原样插入（可写 `<b>`），`items` 会被转义。
-- 章节 `id` 是进度持久化的键（`c1`–`c16`、`t1`–`t23`），**改名会导致用户已勾的进度丢失**。
+- 章节 `id` 与收集项位置是进度持久化的键，规则见 `AGENTS.md`，现状记录在 `src/progress.lock.json`。
 - `build()` 每次切换游戏时整体重渲染；完成勾选只做局部更新（`renderProgress/renderToc/updateNext`），不重绘页面，避免滚动位置跳动。
 - 搜索：每个可搜元素带 `data-search`，文本先 `.replace(/<[^>]+>/g," ")` 去掉标签再小写化。
 
@@ -43,19 +40,19 @@
 2. **缩小帽最终战（Vaati 三连战）描述刻意笼统**，未核实各阶段机制，目前只写"三连战、带妖精、弱点会转移"。如果要补，先查证再写，不要编。
 3. **「罗迪」**（幻想传说 瓦尔哈拉战役后临时加入、达奥斯战前离队）来自日文 wiki，未二次核实，属可接受的存疑项。
 4. 缩小帽的「心之碎片 ×3（神殿内外）」等数量为近似值，未逐一核对全集。
-5. 用户若想换配色，只需给一个色相倾向（紫/红/青），改两组变量即可。
+5. 用户若想换配色，只需给一个色相倾向（紫/红/青），改对应主题块即可。
 6. 可选扩展：加更多游戏（同一套结构，报名字即可）、把地图/路线画进页面、导出 A5 小册子、做成 PWA（需 http 托管才能装）。
 
 ## 6. 怎么验证改动
 
 ```bash
 python3 -m http.server 8765      # 工作区根目录
-# 然后浏览器打开 http://127.0.0.1:8765/retro-guide.html
+# 然后浏览器打开 http://127.0.0.1:8765/index.html
 ```
 
 - 本环境**截图不可用**（`Current display surface not available for capture`），只能用 DOM 断言验证：节点数量、`getComputedStyle` 取 `--acc`/`backgroundColor`、`localStorage` 往返、`scrollWidth > innerWidth` 查横向溢出。
 - browser 工具**拒绝 `file://`**，必须走本地 http。
-- 回归检查清单：两作章节数（16 / 23）→ 搜索中文名命中 → 勾选后刷新仍保留 → 主题切回后 `--acc` 正确。
+- 回归检查清单见 `AGENTS.md` 的完成标准。
 
 ## 7. 建议加载的技能
 
@@ -68,5 +65,5 @@ python3 -m http.server 8765      # 工作区根目录
 ## 8. 事实来源（供复核）
 
 - 缩小帽流程与 Boss 机制：[GameFAQs 完整攻略](https://gamefaqs.gamespot.com/gba/920670-the-legend-of-zelda-the-minish-cap/faqs/47138)
-- 幻想传说 X 四份流程表（含时限要素）：[なりきりダンジョンX まとめwiki](https://w.atwiki.jp/naridan_x/)（页 185–188）
+- 幻想传说 X 四份流程表（含时限要素）：[なりきりダンジョンX まとめwiki](https://w.atwiki.jp/naridan-x/)（页 185–188）
 - 汉化版存在性：CHS 补丁，PSP 编号 `ULJS00293`
