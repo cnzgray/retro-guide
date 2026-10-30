@@ -7,6 +7,8 @@ Retroid Pocket G2（Android 开源掌机）上边玩边查的单页攻略，覆�
 
 老游戏没有任务指引，网上攻略又散、又旧、图还全挂。所以这里交付的不是文章，而是一个**单文件、零外链、`file://` 直接打开**的速查页：章节卡折叠 + 进度勾选 + 卡关 Q&A + 收集清单 + Boss 速查 + 全站搜索，进度存本地。
 
+线上版：<https://cnzgray.github.io/retro-guide/>（GitHub Pages，HTTP 自动跳 HTTPS）
+
 ## 文件
 
 | 文件 | 说明 |
@@ -32,11 +34,7 @@ python3 -m http.server 8765
 
 ## 发布（GitHub Pages）
 
-当前按默认域发布，路径形如 `https://<用户名>.github.io/retro-guide/`：
-
-1. 建公开仓库（私有仓库发布 Pages 需 GitHub Pro），推 `main` 分支；
-2. Settings → Pages → Source 选 `Deploy from a branch`，分支 `main`、目录 `/ (root)`；
-3. 约 1 分钟后站点可访问，`index.html` 即首页。
+已上线：<https://cnzgray.github.io/retro-guide/>，仓库 `cnzgray/retro-guide`（公开），Pages 走 `main` / root，HTTPS 已强制。改完 `git push` 后约 1 分钟自动重建。
 
 ## 技术结构
 
