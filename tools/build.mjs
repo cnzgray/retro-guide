@@ -196,6 +196,9 @@ function validate(name, g, problems) {
           if (!isStr(it.n)) bad(`${iat} 需要 n`);
           if (it.a !== undefined && !isStr(it.a)) bad(`${iat}.a 必须是字符串`);
           if (it.l !== undefined && !isStrArr(it.l)) bad(`${iat}.l 必须是字符串数组`);
+          if (it.en !== undefined && !isStr(it.en)) bad(`${iat}.en 必须是字符串`);
+          if (it.p !== undefined && !isStrArr(it.p)) bad(`${iat}.p 必须是字符串数组`);
+          if (it.w !== undefined && !isStrArr(it.w)) bad(`${iat}.w 必须是字符串数组`);
         });
       });
     }
@@ -206,6 +209,9 @@ function validate(name, g, problems) {
     for (const k of ["title", "tab", "unit", "stat", "note", "foot"]) if (!isStr(g.itemsMeta?.[k])) bad(`itemsMeta 需要 ${k}`);
     if (!isStrArr(g.itemsMeta?.filters) || !g.itemsMeta.filters.length) bad("itemsMeta.filters 必须是非空字符串数组");
     else for (const f of g.itemsMeta.filters) if (!(g.items || []).some((grp) => grp.t === f)) bad(`itemsMeta.filters 没有对应分组：${f}`);
+    for (const k of ["places", "ways"]) {
+      if (g.itemsMeta[k] !== undefined && !isStrArr(g.itemsMeta[k])) bad(`itemsMeta.${k} 必须是字符串数组`);
+    }
     if (g.itemsMeta.favMap !== undefined) {
       if (!g.itemsMeta.favMap || typeof g.itemsMeta.favMap !== "object" || Array.isArray(g.itemsMeta.favMap)) bad("itemsMeta.favMap 必须是对象");
       else for (const [k, v] of Object.entries(g.itemsMeta.favMap)) if (!isStr(k) || !isStr(v)) bad(`itemsMeta.favMap 的键和值都必须是字符串：${k}`);
@@ -226,8 +232,8 @@ function validate(name, g, problems) {
     ...g.checks.flatMap((c) => [c.t, ...(c.items || [])]), ...g.qa.map((q) => q.q), ...g.bosses.flatMap((b) => [b.n, b.s]),
     ...(g.quests || []).flatMap((grp) => [grp.area, ...grp.items.flatMap((it) => [it.n, ...(it.g ? [it.g] : []), ...(it.d ? [it.d] : []), ...(it.rw || [])])]),
     ...(g.catalog || []).flatMap((grp) => [grp.t, ...grp.items.flatMap((it) => [it.n, ...(it.a ? [it.a] : []), ...(it.u ? [it.u] : [])])]),
-    ...(g.items || []).flatMap((grp) => [grp.t, ...grp.items.flatMap((it) => [it.n, ...(it.a ? [it.a] : []), ...(it.l || [])])]),
-    ...(g.itemsMeta ? [g.itemsMeta.title, g.itemsMeta.tab, g.itemsMeta.unit, g.itemsMeta.stat, ...(g.itemsMeta.filters || []), ...Object.entries(g.itemsMeta.favMap || {}).flat()] : []),
+    ...(g.items || []).flatMap((grp) => [grp.t, ...grp.items.flatMap((it) => [it.n, ...(it.en ? [it.en] : []), ...(it.a ? [it.a] : []), ...(it.l || []), ...(it.p || []), ...(it.w || [])])]),
+    ...(g.itemsMeta ? [g.itemsMeta.title, g.itemsMeta.tab, g.itemsMeta.unit, g.itemsMeta.stat, ...(g.itemsMeta.filters || []), ...(g.itemsMeta.places || []), ...(g.itemsMeta.ways || []), ...Object.entries(g.itemsMeta.favMap || {}).flat()] : []),
     ...(g.tips || []).map((t) => t.t),
     ...(g.catalogMeta ? [g.catalogMeta.title, g.catalogMeta.tab, g.catalogMeta.unit, g.catalogMeta.stat, ...(g.catalogMeta.filters || [])] : []),
     ...(g.bossMeta ? [g.bossMeta.title, g.bossMeta.tab] : [])];

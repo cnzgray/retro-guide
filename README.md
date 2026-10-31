@@ -137,8 +137,8 @@ GAMES[]                     游戏
 ├─ catalog[]                全物品：{t, items:[{n, p, a, u, w, l}]}；武器/防具/收藏品
 ├─ catalogUsers[]           物品角色筛选：{n, armor, medium, mech}
 ├─ catalogMeta{}            可选，改写 catalog 的文案与筛选：{title, tab, unit, stat, note, foot, filters[]}
-├─ items[]                  物品出处（Pokopia）：{t, items:[{n, a, l}]}
-├─ itemsMeta{}              物品出处的文案、筛选与喜好标签对照：{title, tab, unit, stat, note, foot, filters[], favMap{}}
+├─ items[]                  物品出处（Pokopia）：{t, items:[{n, a, en, l, p, w}]}
+├─ itemsMeta{}              物品出处的文案、筛选与喜好标签对照：{title, tab, unit, stat, note, foot, filters[], places[], ways[], favMap{}}
 ├─ tips[]                   小技巧：{t, a}
 ├─ qa[]                     卡关急救：{q, a}
 ├─ checks[]                 收集清单分组：{t, items[]}
@@ -149,7 +149,7 @@ GAMES[]                     游戏
 - 章节 `id` 是进度持久化的键，**改名会丢掉用户已勾的进度**；id 与显示顺序无关，顺序由 `n` 决定。
 - `quests` 的 `id` 是任务进度的键，只增不删；`t` 标限时，`x` 是二选一组（同组必须正好 2 条），`s` 标剧情，`ns2` 标 NS2 新增，`v` 标译名待核，`d` 是期限文案，`m/e/f` 是金钱/EXP/评价，`rw` 是奖励道具数组。限时任务必须有 `d`（或所在组有 `d`）。
 - `catalog` 按物品类型分组：`n` 名称、`p` 价格、`a` 基础数值或收藏品区域/类别、`u` 武器专属角色、`w` 防具重量（轻/中/重/机）、`l` 可选标签数组（Pokopia 用来存喜好类别，渲染成小标签并参与搜索）。`catalogUsers[]` 定义角色筛选：`n` 角色名，`armor` 防具规则已核实，`medium` 中型免技能，`mech` 可穿机界防具。当前覆盖武器/防具/收藏品 1504 件；素材和关键物品没有独立物品页，散落在任务报酬与殖民地6 清单里。`tips` 是 `{t, a}` 小技巧卡片。
-- `items` 与 `itemsMeta` 是 Pokopia 的「物品出处」表：`items` 按类别分组，条目 `{n, a, l}`，`a` 是出处（地点 + 获取方式），`l` 是可选喜好标签；`itemsMeta` 定义标题、文案、筛选按钮与 `favMap`（中文标签 → 英文原名，用于悬停提示和英文搜索）。`itemsMeta.filters` 必须对应 `items` 分组。物品与喜好不参与进度键。
+- `items` 与 `itemsMeta` 是 Pokopia 的「物品出处」表：`items` 按类别分组，条目 `{n, a, en, l, p, w}`——`n` 中文名（暂无可靠简中名时等于英文原名并标「原名」）、`a` 出处（地点 + 获取方式）、`en` 英文原名（灰字显示、参与搜索）、`l` 喜好标签、`p` 地点标签（荒野/海边/山地/空岛/空空镇/云岛/海底/梦岛）、`w` 获取方式标签（野外/初始/宝藏/套组/制作/商店/交易/鉴定/3D 打印/电磁飘浮/宝可梦中心/任务/活动）。`itemsMeta` 定义标题、文案、类别筛选、地点/方式筛选与 `favMap`（喜好中文标签 → 英文原名）。`itemsMeta.filters` 必须对应 `items` 分组。物品与喜好不参与进度键。
 - `steps / goal / warn / boss.tip / qa.a / bosses.t` 按 HTML 原样插入（可写 `<b>`）；`title / area / items`、收集项、任务名/委托人/期限、`boss.name` 等会被转义，不能写标签。
 - 主题变量写在 `theme` 对象里；构建时默认游戏生成 `:root`，其余生成 `body[data-game="<id>"]` 到 `assets/themes.css`。标签圆点色直接取 `theme["--acc"]`，不再单独维护 `accent`。
 - `build()` 每次切换游戏整体重渲染；勾选章节/任务/收集项只做局部更新，不重绘整页，避免滚动位置跳动。
@@ -192,7 +192,7 @@ GAMES[]                     游戏
 9. 多文件：`index.html` 只引用 `assets/` 与 `games/`，没有内联样式/脚本；把三样一起拷到别处，`file://` 能打开并加载 481 条任务；删掉 `games/xenoblade.js` 后页面应缺少异度之刃数据（证明不是内嵌的）。
 10. 异度之刃「全物品」：1504 件 / 7 类型；防具筛选 883 件；搜「甜山葵」命中收藏品；「小技巧」18 张，搜「普攻自动」命中。
 11. 物品与技巧不进 `progress.lock.json`；改完跑 `node tools/build.mjs` 和 `--check` 即可，不需要 `--lock`。
-12. Pokopia「物品」：1710 件 / 12 类；筛选「材料」60 件；搜「Honey」命中并展开对应分组；搜「方块类」同时命中图鉴里的宝可梦和物品；悬停喜好标签显示英文原名；窄屏（≤420px）无横向溢出。
+12. Pokopia「物品」：1710 件 / 12 类；默认显示中文名 + 英文灰字，337 件标「原名」；筛选「材料」60 件，叠加地点「空空镇」8 件、方式「商店」仍 8 件；搜「石头」与「Stone」都命中；搜「方块类」同时命中图鉴里的宝可梦和物品；悬停喜好标签显示英文原名；窄屏（≤420px）无横向溢出。
 
 ## 已知风险与待办
 
@@ -220,5 +220,5 @@ GAMES[]                     游戏
 - 异度之刃任务、区域、Boss、殖民地6 复兴素材：[蒙纳多研究本部（xenoblade.cn）](https://xenoblade.cn/)
 - 异度之刃主线流程与 Boss 机制：[Game8《Xenoblade Chronicles: Definitive Edition》攻略](https://game8.co/games/Xenoblade-Chronicles-Definitive-Edition)
 - 异度之刃任务总数（480/481）、130 限时、25 组二选一：[Xenoblade Wiki（Fandom）](https://xenoblade.fandom.com/wiki/Quest_(XC1))
-- 宝可梦 Pokopia：[Serebii.net](https://www.serebii.net/pokemonpokopia/)、[Serebii 物品库](https://www.serebii.net/pokemonpokopia/items.shtml)、[Serebii Favorites](https://www.serebii.net/pokemonpokopia/favorites.shtml)、[Game8](https://game8.co/games/Pokemon-Pokopia/archives/583158)、[Nintendo Soup](https://nintendosoup.com/guide-how-to-befriend-all-legendary-pokemon-in-pokemon-pokopia)、[Pokopia Wiki](https://www.pokopiawiki.com/guides/how-to-befriend-with-raikou-entei-and-suicune)、[The Games Wiki](https://thegameswiki.com/pokopia/wiki/missable-events)；官方译名：[PokéAPI](https://github.com/PokeAPI/pokeapi/tree/master/data/v2/csv)
+- 宝可梦 Pokopia：[Serebii.net](https://www.serebii.net/pokemonpokopia/)、[Serebii 物品库](https://www.serebii.net/pokemonpokopia/items.shtml)、[Serebii Favorites](https://www.serebii.net/pokemonpokopia/favorites.shtml)、[Pokopia 攻略 Wiki（繁中）](https://pokopia.gamertw.com/zh-TW/item)、[Game8](https://game8.co/games/Pokemon-Pokopia/archives/583158)、[Nintendo Soup](https://nintendosoup.com/guide-how-to-befriend-all-legendary-pokemon-in-pokemon-pokopia)、[Pokopia Wiki](https://www.pokopiawiki.com/guides/how-to-befriend-with-raikou-entei-and-suicune)、[The Games Wiki](https://thegameswiki.com/pokopia/wiki/missable-events)；官方译名：[PokéAPI](https://github.com/PokeAPI/pokeapi/tree/master/data/v2/csv)
 - 汉化版存在性：幻想传说 X CHS 补丁 PSP 编号 `ULJS00293`；PS1《永恒传说》中文汉化版亦已存在（3 碟）

@@ -223,6 +223,7 @@
   .citem .cneed{display:none;margin-left:6px}
   .citem.need .cneed{display:inline}
   .ctag{display:inline-block;margin-left:4px;padding:0 5px;border-radius:99px;background:var(--a10);color:var(--acc);font-size:10.5px;line-height:1.6;white-space:nowrap}
+  .citem .cen{color:#6d7989;font-size:11.5px;margin-left:6px;font-weight:400}
   #items .citem .cmeta{max-width:74%}
   #items .citem .ctags{display:block;margin-top:2px}
   @media (max-width:600px){

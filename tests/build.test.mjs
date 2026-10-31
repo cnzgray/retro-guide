@@ -201,5 +201,5 @@ test("物品喜好标签必须是字符串数组", (t) => {
 });
 
 test("items 条目缺名称时报错", (t) => {
-  assertFails(t, "src/games/pokopia.js", (s) => s.replace('"n": "Honey",', '"nm": "Honey",'), /items\[0\]\.items\[0\] 需要 n/);
+  assertFails(t, "src/games/pokopia.js", (s) => s.replace('"n": "甜甜蜜",', '"nm": "甜甜蜜",'), /items\[0\]\.items\[0\] 需要 n/);
 });

@@ -25,6 +25,8 @@ let itemUser="";
 let itemClass="";
 let itemSort="value";
 let itemsFilter="all";
+let itemsPlace="";
+let itemsWay="";
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 
 const $=(s,r=document)=>r.querySelector(s);
@@ -263,8 +265,10 @@ function itemsHTML(g){
   const body=g.items.map((grp,gi)=>{
     const items=grp.items.map(it=>{
       const tags=favTags(it,g);
-      const search=[it.n,it.a,grp.t,...favSearch(it,g)].filter(Boolean).join(" ").toLowerCase();
-      return `<div class="citem" data-search="${esc(search)}" data-igroup="${esc(grp.t)}"><span class="cname">${esc(it.n)}</span><span class="cmeta">${it.a?esc(it.a):""}${tags?`<span class="ctags">${tags}</span>`:""}</span></div>`;
+      const en=(it.en&&it.en!==it.n)?`<span class="cen">${esc(it.en)}</span>`:"";
+      const raw=(it.en&&it.en===it.n)?` <i class="qbadge v" title="暂无可靠简中名">原名</i>`:"";
+      const search=[it.n,it.en,it.a,grp.t,...(it.p||[]),...(it.w||[]),...favSearch(it,g)].filter(Boolean).join(" ").toLowerCase();
+      return `<div class="citem" data-search="${esc(search)}" data-igroup="${esc(grp.t)}" data-places="${esc((it.p||[]).join("|"))}" data-ways="${esc((it.w||[]).join("|"))}"><span class="cname">${esc(it.n)}${en}${raw}</span><span class="cmeta">${it.a?esc(it.a):""}${tags?`<span class="ctags">${tags}</span>`:""}</span></div>`;
     }).join("");
     return `<details class="qgroup" data-igroup="${esc(grp.t)}"><summary><span class="qarea">${esc(grp.t)}</span><span class="qcnt">${grp.items.length} ${esc(unit)}</span></summary><div class="qitems">${items}</div></details>`;
   }).join("");
@@ -277,6 +281,14 @@ function itemsHTML(g){
     ${(meta.filters||[]).map(f=>`<button class="qchip" data-xfilter="${esc(f)}">${esc(f)}</button>`).join("")}
     <button class="qchip sep" data-xexpand="1">展开全部</button>
     <button class="qchip" data-xexpand="0">收起全部</button>
+  </div>
+  <div class="qchips" id="ifilters3">
+    <button class="qchip on" data-pfilter="">全部地点</button>
+    ${(meta.places||[]).map(f=>`<button class="qchip" data-pfilter="${esc(f)}">${esc(f)}</button>`).join("")}
+  </div>
+  <div class="qchips" id="ifilters4">
+    <button class="qchip on" data-wfilter="">全部方式</button>
+    ${(meta.ways||[]).map(f=>`<button class="qchip" data-wfilter="${esc(f)}">${esc(f)}</button>`).join("")}
   </div>
   <div id="xgroups">${body}</div>
   <p class="qfoot">${meta.foot||""}</p>`;
@@ -359,10 +371,12 @@ function applyItemsFilter(filter){
   const q=($("#search").value||"").trim().toLowerCase();
   document.querySelectorAll("#items .citem").forEach(el=>{
     let ok=itemsFilter==="all"||el.dataset.igroup===itemsFilter;
+    if(ok&&itemsPlace)ok=(el.dataset.places||"").split("|").includes(itemsPlace);
+    if(ok&&itemsWay)ok=(el.dataset.ways||"").split("|").includes(itemsWay);
     if(ok&&q)ok=el.dataset.search.includes(q);
     el.classList.toggle("hidden",!ok);
   });
-  const narrowed=q||itemsFilter!=="all";
+  const narrowed=q||itemsFilter!=="all"||itemsPlace||itemsWay;
   document.querySelectorAll("#items details.qgroup").forEach(d=>{
     const any=[...d.querySelectorAll(".citem")].some(el=>!el.classList.contains("hidden"));
     d.classList.toggle("hidden",!any);
@@ -374,6 +388,8 @@ function applyItemsFilter(filter){
     if(!nr){nr=document.createElement("div");nr.id="inores";nr.className="nores";nr.textContent="没有匹配的条目";$("#xgroups").appendChild(nr);}
   }else if(nr)nr.remove();
   document.querySelectorAll("#ifilters2 [data-xfilter]").forEach(b=>b.classList.toggle("on",b.dataset.xfilter===itemsFilter));
+  document.querySelectorAll("#ifilters3 [data-pfilter]").forEach(b=>b.classList.toggle("on",b.dataset.pfilter===itemsPlace));
+  document.querySelectorAll("#ifilters4 [data-wfilter]").forEach(b=>b.classList.toggle("on",b.dataset.wfilter===itemsWay));
 }
 
 function bindItemsEvents(){
@@ -381,6 +397,10 @@ function bindItemsEvents(){
   root.addEventListener("click",e=>{
     const f=e.target.closest("[data-xfilter]");
     if(f){applyItemsFilter(f.dataset.xfilter);return;}
+    const p=e.target.closest("#ifilters3 [data-pfilter]");
+    if(p){itemsPlace=p.dataset.pfilter;applyItemsFilter(itemsFilter);return;}
+    const w=e.target.closest("#ifilters4 [data-wfilter]");
+    if(w){itemsWay=w.dataset.wfilter;applyItemsFilter(itemsFilter);return;}
     const x=e.target.closest("[data-xexpand]");
     if(x){
       const open=x.dataset.xexpand==="1";
