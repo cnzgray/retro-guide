@@ -35,6 +35,12 @@
 | [Game8《Xenoblade Chronicles: Definitive Edition》攻略](https://game8.co/games/Xenoblade-Chronicles-Definitive-Edition) | 异度之刃 决定版主线流程、Boss 机制 |
 | [Game8《Tales of Eternia》攻略](https://game8.jp/toe/831842) | 永恒传说主线流程、Boss 弱点（重制版） |
 | [Xenoblade Wiki（Fandom）](https://xenoblade.fandom.com/wiki/Quest_(XC1)) | 任务总数、限时/二选一分类、武器与防具的装备规则 |
+| [Serebii.net《Pokémon Pokopia》资料库](https://www.serebii.net/pokemonpokopia/) | Pokopia 重要委托、入会挑战、技能、传说、活动档期、图鉴与栖息地 |
+| [Game8《Pokémon Pokopia》攻略](https://game8.co/games/Pokemon-Pokopia/archives/583158) | Pokopia 分镇流程、Bubbly Basin 流程 |
+| [Nintendo Soup《Pokémon Pokopia》传说指南](https://nintendosoup.com/guide-how-to-befriend-all-legendary-pokemon-in-pokemon-pokopia) | Pokopia 传说宝可梦的交友条件 |
+| [Pokopia Wiki](https://www.pokopiawiki.com/guides/how-to-befriend-with-raikou-entei-and-suicune) | Pokopia Dream Island 前置与玩偶 |
+| [The Games Wiki](https://thegameswiki.com/pokopia/wiki/missable-events) | Pokopia 活动门槛、错过内容说明 |
+| [PokéAPI 多语言名称表](https://github.com/PokeAPI/pokeapi/tree/master/data/v2/csv) | 宝可梦、招式的简体中文官方名 |
 
 上述站点的原文版权归各自作者所有，本项目仅作事实性整理与再表述。
 
@@ -45,6 +51,6 @@
 
 ## 商标与免责
 
-《塞尔达传说》《幻想传说》《换装迷宫》《异度之刃》等游戏名称、角色、地名、术技名称的著作权与商标归任天堂、万代南梦宫、Monolith Soft 等各自权利人所有。本项目为非官方同人整理，与上述权利人无关联、未获授权或背书，仅供个人通关参考。
+《塞尔达传说》《幻想传说》《换装迷宫》《异度之刃》《宝可梦》等游戏名称、角色、地名、术技名称的著作权与商标归任天堂、Game Freak、The Pokémon Company、万代南梦宫、Monolith Soft 等各自权利人所有。本项目为非官方同人整理，与上述权利人无关联、未获授权或背书，仅供个人通关参考。
 
 若权利人认为某处内容侵犯其权利，请在 <https://github.com/cnzgray/retro-guide/issues> 提出，核实后即行删除该处内容。

@@ -85,9 +85,9 @@
   .next b{color:var(--acc)}
   .next .k{font-size:11.5px;color:#6d7989;letter-spacing:.1em}
 
-  .ptabs{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;margin:0 0 18px;padding:8px 0;background:var(--bg);scrollbar-width:none}
+  .ptabs{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;margin:0 0 18px;padding:8px 0;background:transparent;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);scrollbar-width:none}
   .ptabs::-webkit-scrollbar{display:none}
-  .ptab{flex:none;font:inherit;font-size:13.5px;padding:7px 13px;border-radius:10px;cursor:pointer;color:#94a1b2;background:#121820;border:1px solid var(--line)}
+  .ptab{flex:none;font:inherit;font-size:13.5px;padding:7px 13px;border-radius:10px;cursor:pointer;color:#94a1b2;background:var(--panel);border:1px solid var(--line)}
   .ptab:hover{border-color:var(--focus);color:#e7ecf3}
   .ptab.on{color:var(--acc);border-color:var(--a45);background:var(--a10)}
   .qitem,.chapter,[id]{scroll-margin-top:60px}
