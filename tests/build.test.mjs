@@ -189,5 +189,5 @@ test("--rename 同步进度快照", (t) => {
 });
 
 test("catalogMeta 的筛选必须对应分组", (t) => {
-  assertFails(t, "src/games/pokopia.js", (s) => s.replace('"Basin 栖息地"', '"不存在的分组"'), /catalogMeta\.filters 没有对应分组/);
+  assertFails(t, "src/games/pokopia.js", (s) => s.replace('"海底栖息地"', '"不存在的分组"'), /catalogMeta\.filters 没有对应分组/);
 });
