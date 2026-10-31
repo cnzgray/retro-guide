@@ -26,11 +26,14 @@
 | 来源 | 用于 |
 |---|---|
 | [GameFAQs · The Legend of Zelda: The Minish Cap FAQ](https://gamefaqs.gamespot.com/gba/920670-the-legend-of-zelda-the-minish-cap/faqs/47138) | 缩小帽流程、Boss 机制 |
+| [Zelda Wiki](https://zeldawiki.wiki/) | 缩小帽 Gregal 与光箭的时限条件、官方简体译名 |
+| [中文维基《塞尔达传说 缩小帽》](https://zh.wikipedia.org/wiki/薩爾達傳說_不可思議的帽子) | 缩小帽部分非官方译名 |
 | [なりきりダンジョンX まとめwiki](https://w.atwiki.jp/naridan-x/)（页 185–188） | 幻想传说 X 流程表、时限要素、术技数据 |
 | テイルズオブエターニア攻略はココ！（链接待补） | 永恒传说流程、时限要素 |
 | QiQoe（链接待补） | 永恒传说流程、时限要素 |
 | [蒙纳多研究本部（xenoblade.cn）](https://xenoblade.cn/) | 异度之刃 决定版任务、区域、Boss、殖民地6 复兴、物品的装备角色与重量分类 |
 | [Game8《Xenoblade Chronicles: Definitive Edition》攻略](https://game8.co/games/Xenoblade-Chronicles-Definitive-Edition) | 异度之刃 决定版主线流程、Boss 机制 |
+| [Game8《Tales of Eternia》攻略](https://game8.jp/toe/831842) | 永恒传说主线流程、Boss 弱点（重制版） |
 | [Xenoblade Wiki（Fandom）](https://xenoblade.fandom.com/wiki/Quest_(XC1)) | 任务总数、限时/二选一分类、武器与防具的装备规则 |
 
 上述站点的原文版权归各自作者所有，本项目仅作事实性整理与再表述。
