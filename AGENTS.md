@@ -17,7 +17,7 @@
 6. 异度之刃的物品表在 `catalog[]`（`t` 类型、`items:[{n,p,a,u,w}]`；`u` 武器专属角色、`w` 防具重量 轻/中/重/机，角色筛选按钮与能力规则在 `catalogUsers[]`），小技巧在 `tips[]`（`{t,a}`）。物品与技巧不参与进度键，不进 `progress.lock.json`；改完跑构建和 `--check` 即可。
 7. `node tools/build.mjs` 生成 `index.html` + `assets/` + `games/`，源码与产物一起提交。
 
-完成标准：`node tools/build.mjs --check` 与 `node --test tests/build.test.mjs` 都退出 0；起 `python3 -m http.server 8765` 后确认各作章节数与 `src/progress.lock.json` 一致、异度之刃任务表 481 条 / 17 区域 / 130 限时 / 25 组二选一、全物品 1504 件 / 7 类、小技巧 18 张、搜中文名/物品名命中、勾选后刷新仍保留、二选一锁定生效、切换后 `--acc` 正确、窄屏（≤420px）无横向溢出、页脚在各作下都可见；Pokopia 另确认：6 章、图鉴 6 组、搜「杰尼龟」「Tall Grass」都能命中、物品 1710 件 / 12 类、默认中文名 + 英文灰字、搜「石头」与「Stone」都命中、类别叠加地点/方式筛选正确、搜「方块类」同时命中宝可梦与物品；再把 `index.html` + `assets/` + `games/` 拷到别处，用 `file://` 打开确认能正常加载。
+完成标准：`node tools/build.mjs --check` 与 `node --test tests/build.test.mjs` 都退出 0；起 `python3 -m http.server 8765` 后确认各作章节数与 `src/progress.lock.json` 一致、异度之刃任务表 481 条 / 17 区域 / 130 限时 / 25 组二选一、全物品 1504 件 / 7 类、小技巧 18 张、搜中文名/物品名命中、勾选后刷新仍保留、二选一锁定生效、切换后 `--acc` 正确、窄屏（≤420px）无横向溢出、页脚在各作下都可见；Pokopia 另确认：6 章、图鉴 6 组、搜「杰尼龟」「Tall Grass」都能命中、物品 1710 件 / 12 类、默认中文名 + 英文灰字、搜「石头」与「Stone」都命中、类别叠加地点/方式筛选正确、搜「方块类」同时命中宝可梦与物品；流程里的宝可梦/物品名能点开对应条目；再把 `index.html` + `assets/` + `games/` 拷到别处，用 `file://` 打开确认能正常加载。
 
 8. `catalogMeta`、`bossMeta` 给非物品数据改标题和筛选（Pokopia 用作图鉴与传说速查）；`catalogMeta.filters` 必须对应 `catalog` 分组，否则 `--check` 红。`items` / `itemsMeta` 是 Pokopia 的物品出处表：条目 `{n, a, en, l, p, w}`，`n` 中文名、`a` 出处、`en` 英文原名、`l` 喜好标签、`p` 地点标签、`w` 获取方式标签；`itemsMeta.filters` 必须对应 `items` 分组，`places` / `ways` 是二级筛选按钮。喜好标签的中文名到英文原名对照放在 `itemsMeta.favMap`，改标签时两处一起改；物品中文名与英文原名的对照在每条 `n` / `en`，改译名时同时改，否则灰字和英文搜索会漏。
 

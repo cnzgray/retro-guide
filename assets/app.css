@@ -123,6 +123,8 @@
   .chapter.open .cbody{display:block}
   .goal{margin:12px 0 8px;font-size:14.5px;color:#dbe4ee}
   .goal b{color:var(--acc);font-weight:600}
+  .xref{color:inherit;text-decoration:underline dotted;text-decoration-color:var(--a45);text-underline-offset:3px;cursor:pointer}
+  .xref:hover,.xref:focus-visible{color:var(--acc);text-decoration-color:var(--acc)}
 
   ol.steps{margin:8px 0 12px;padding:0;list-style:none;counter-reset:s}
   ol.steps li{position:relative;padding-left:26px;margin:7px 0;font-size:14.5px;color:#c8d2de;line-height:1.7}

@@ -104,7 +104,58 @@ function renderProgress(){
   $("#ptext").textContent=done+" / "+total;
 }
 
-function chapterHTML(c){
+let xrefCache=null;
+function xrefIndex(g){
+  if(xrefCache&&xrefCache.id===g.id)return xrefCache;
+  const map=new Map();
+  const add=(name,kind)=>{
+    if(!name||name.length<2||!/[\u4e00-\u9fff]/.test(name))return;
+    if(!map.has(name))map.set(name,kind);
+  };
+  for(const grp of g.catalog||[]){
+    for(const it of grp.items){
+      const raw=(it.n||"").replace(/^#\d+\s*/,"");
+      const m=raw.match(/^(.+?)(?: [A-Za-z].*)?$/);
+      add(m?m[1]:raw,"catalog");
+    }
+  }
+  for(const grp of g.items||[]){
+    for(const it of grp.items)add(it.n,"items");
+  }
+  const keys=[...map.keys()].sort((a,b)=>b.length-a.length);
+  const re=keys.length?new RegExp("("+keys.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")+")","g"):null;
+  xrefCache={id:g.id,map,re};
+  return xrefCache;
+}
+
+function xrefHTML(html,g){
+  if(!html)return html;
+  const {map,re}=xrefIndex(g);
+  if(!re)return html;
+  return html.split(/(<[^>]*>)/).map(part=>{
+    if(!part||part[0]==="<")return part;
+    return part.replace(re,m=>{
+      const kind=map.get(m);
+      if(!kind)return m;
+      return `<a class="xref" href="#" title="查看「${esc(m)}」的资料" data-xref="${kind}" data-q="${esc(m)}">${m}</a>`;
+    });
+  }).join("");
+}
+
+function xrefJump(kind,q){
+  const input=$("#search");
+  input.value=q;
+  applySearch(q);
+  showPanel(kind);
+  const hit=document.querySelector(`#${kind} .citem:not(.hidden)`);
+  if(hit){
+    const d=hit.closest("details.qgroup");
+    if(d)d.open=true;
+    hit.scrollIntoView({behavior:"smooth",block:"center"});
+  }
+}
+
+function chapterHTML(c,g){
   const done=isDone(c.id);
   const searchTxt=[c.title,c.area,c.goal,(c.steps||[]).join(" "),(c.items||[]).join(" "),(c.warn||[]).join(" "),c.boss?c.boss.name+" "+c.boss.tip:""].join(" ").replace(/<[^>]+>/g," ").toLowerCase();
   return `<article class="card chapter ${done?"done":""}" id="ch-${c.id}" data-search="${esc(searchTxt)}">
@@ -114,12 +165,12 @@ function chapterHTML(c){
       <button class="donebtn" data-done="${c.id}" aria-pressed="${done}" title="标记完成">✓</button>
     </header>
     <div class="cbody">
-      <p class="goal"><b>目标</b>　${c.goal}</p>
-      <ol class="steps">${(c.steps||[]).map(s=>`<li>${s}</li>`).join("")}</ol>
+      <p class="goal"><b>目标</b>　${xrefHTML(c.goal,g)}</p>
+      <ol class="steps">${(c.steps||[]).map(s=>`<li>${xrefHTML(s,g)}</li>`).join("")}</ol>
       ${(c.items&&c.items.length)?`<div class="chips">${c.items.map(i=>`<span class="chip key">${esc(i)}</span>`).join("")}</div>`:""}
-      ${(c.warn||[]).map(w=>`<div class="warn"><b>易漏 / 卡点</b>　${w}</div>`).join("")}
-      ${c.boss?`<div class="bossbox"><b>${esc(c.boss.name)}</b>　${c.boss.tip}</div>`:""}
-      ${c.tip?`<div class="tip"><b>提示</b>　${c.tip}</div>`:""}
+      ${(c.warn||[]).map(w=>`<div class="warn"><b>易漏 / 卡点</b>　${xrefHTML(w,g)}</div>`).join("")}
+      ${c.boss?`<div class="bossbox"><b>${esc(c.boss.name)}</b>　${xrefHTML(c.boss.tip,g)}</div>`:""}
+      ${c.tip?`<div class="tip"><b>提示</b>　${xrefHTML(c.tip,g)}</div>`:""}
     </div>
   </article>`;
 }
@@ -530,7 +581,7 @@ function build(){
   </div>
 
   <h2 class="sec" id="flow">流程</h2>
-  <div id="chapters">${g.chapters.length?g.chapters.map(chapterHTML).join(""):'<div class="nores">内容整理中…</div>'}</div>
+  <div id="chapters">${g.chapters.length?g.chapters.map(c=>chapterHTML(c,g)).join(""):'<div class="nores">内容整理中…</div>'}</div>
   </div>
 
   ${g.quests?`<section id="quests" data-panel="quests"><h2 class="sec">全任务</h2>${questSectionHTML(g)}</section>`:""}
@@ -577,6 +628,10 @@ function build(){
     };
   });
   // 完成标记
+  $("#chapters").addEventListener("click",e=>{
+    const a=e.target.closest(".xref");
+    if(a){e.preventDefault();xrefJump(a.dataset.xref,a.dataset.q);}
+  });
   $("#chapters").querySelectorAll("[data-done]").forEach(btn=>{
     btn.onclick=e=>{
       e.stopPropagation();
