@@ -2881,5 +2881,101 @@
         "x": "c6-3"
       }
     }
+  },
+  "pokopia": {
+    "chapters": {
+      "p1": {
+        "title": "Withered Wastelands：让枯地下雨",
+        "warn": 2
+      },
+      "p2": {
+        "title": "Bleak Beach：点亮海滨",
+        "warn": 1
+      },
+      "p3": {
+        "title": "Rocky Ridges：办一场派对",
+        "warn": 1
+      },
+      "p4": {
+        "title": "Sparkling Skylands：重建大楼",
+        "warn": 1
+      },
+      "p5": {
+        "title": "入会挑战：走到片尾",
+        "warn": 1
+      },
+      "p6": {
+        "title": "DLC · Bubbly Basin：海底神殿",
+        "warn": 1
+      }
+    },
+    "checks": [
+      [
+        "水枪 · 杰尼龟",
+        "树叶 · 妙蛙种子",
+        "居合斩 · 飞天螳螂",
+        "碎岩 · 快拳郎",
+        "耕地 · 螺钉地鼠",
+        "跃起 · 鲤鱼王",
+        "冲浪 · 拉普拉斯",
+        "保护色 · 索罗亚（Bleak Beach）",
+        "Stockpile Water · 乌波（帕底亚）",
+        "怪力 · 豪力",
+        "滚动 · 隆隆石",
+        "Glide · 快龙",
+        "攀瀑 · 暴鲤龙（Sparkling Skylands）",
+        "电磁飘浮 · 小磁怪（通关后）",
+        "潜水 · 玛纳霏"
+      ],
+      [
+        "Withered Wastelands",
+        "Bleak Beach",
+        "Rocky Ridges",
+        "Sparkling Skylands"
+      ],
+      [
+        "第 1 次",
+        "第 2 次",
+        "第 3 次",
+        "第 4 次",
+        "第 5 次",
+        "第 6 次",
+        "第 7 次",
+        "第 8 次",
+        "第 9 次"
+      ],
+      [
+        "盖欧卡",
+        "波尔凯尼恩",
+        "雷公",
+        "炎帝",
+        "水君",
+        "超梦",
+        "急冻鸟",
+        "闪电鸟",
+        "火焰鸟",
+        "洛奇亚",
+        "凤王",
+        "梦幻"
+      ],
+      [
+        "学会潜水",
+        "环境等级 3",
+        "Ocean Temple 建成",
+        "玛纳霏",
+        "霏欧纳",
+        "宝可梦中心重建"
+      ],
+      [
+        "More Spores for Hoppip · 2026-03-10 至 03-25",
+        "Copycat Challenge · 2026-04-01",
+        "Bulbasaur's Jump Rope Contest · 2026-04-19 至 04-26，09-20 至 09-28",
+        "Sableye's Gem Hunt · 2026-04-29 至 05-14",
+        "Wish Upon a Jirachi · 2026-06-23 至 07-08",
+        "Zorua's Hide-and-Sneak Contest · 2026-07-19 至 07-27",
+        "Fetching Scales for Feebas · 2026-08-13 至 08-28",
+        "Pumpkaboo's Sweet Surprises · 2026-10-17 至 11-01"
+      ]
+    ]
   }
 }

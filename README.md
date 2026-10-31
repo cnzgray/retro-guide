@@ -1,17 +1,20 @@
-# 老游戏通关手册
+# 游戏通关手册
 
 ![vibe coded](https://img.shields.io/badge/vibe_coded-100%25-ff69b4?style=flat-square)
 
-Retroid Pocket G2（Android 开源掌机）上边玩边查的单页攻略，覆盖四作：
+边玩边查的离线攻略页，老游戏在 Retroid Pocket G2 这类掌机上看，Switch 2 新作在手机或平板上看。覆盖五作：
 
 - **GBA《塞尔达传说：缩小帽》**
 - **PSP《幻想传说 X（Cross Edition）》**
 - **PS1《永恒传说》**
 - **Switch《异度之刃 决定版》（含 Switch 2 Edition 新增内容）**
+- **Switch 2《宝可梦 Pokopia》（含 Ver. 2.0.0 与扩展票 Bubbly Basin）**
 
 老游戏没有任务指引，网上攻略又散、又旧、图还全挂。所以这里交付的不是文章，而是一个**多文件、零外链、`file://` 直接打开**的速查页：`index.html` 只做骨架，`assets/` 放样式和渲染逻辑，`games/` 一作一个数据文件。章节卡折叠 + 进度勾选 + 卡关 Q&A + 收集清单 + Boss 速查 + 全站搜索，进度存本地。
 
 第四作是另一个量级：480 条任务、130 条限时、25 组二选一。页面为此加了「全任务」追踪：按区域列出每一条任务，标出时限与二选一，勾选后自动锁定另一分支；单周目最多 455 条（NS2 版 456 条）。
+
+第五作的重点不同：几乎没有永久错过的内容，所以不追踪任务，而是做能搜的「图鉴速查」——宝可梦 → 栖息地 / 时间 / 天气，栖息地 → 配方 / 可遇对象。
 
 ## 为什么做这个
 
@@ -48,11 +51,11 @@ Retroid Pocket G2（Android 开源掌机）上边玩边查的单页攻略，覆�
 | `assets/app.js` | **产物**：渲染逻辑，由 `src/app.js` 生成 |
 | `assets/themes.css` | **产物**：各作主题变量，构建时从 `src/games/*.js` 的 `theme` 生成 |
 | `games/index.js` | **产物**：浏览器端游戏 id 列表，顺序即标签页顺序 |
-| `games/minish.js`、`topx.js`、`eternia.js`、`xenoblade.js` | **产物**：各作数据，由 `src/games/*.js` 包装成经典脚本，挂到 `window.RETRO_GAMES` |
+| `games/minish.js`、`topx.js`、`eternia.js`、`xenoblade.js`、`pokopia.js` | **产物**：各作数据，由 `src/games/*.js` 包装成经典脚本，挂到 `window.RETRO_GAMES` |
 | `src/shell.html` | 骨架源文件：只写 HTML 结构和资源引用，含 `<!-- __GAME_SCRIPTS__ -->` 占位符 |
 | `src/app.css` | 样式源文件 |
 | `src/app.js` | 渲染源文件；从 `window.RETRO_GAME_IDS` / `window.RETRO_GAMES` 读数据 |
-| `src/games/minish.js`、`topx.js`、`eternia.js`、`xenoblade.js` | 攻略数据源文件，一个游戏一个文件，`export default { ... }`；主题在 `theme`，异度之刃任务表在 `quests` |
+| `src/games/minish.js`、`topx.js`、`eternia.js`、`xenoblade.js`、`pokopia.js` | 攻略数据源文件，一个游戏一个文件，`export default { ... }`；主题在 `theme`，异度之刃任务表在 `quests` |
 | `src/games/index.js` | 构建期游戏索引：`GAME_IDS` 数组列出所有游戏 id，数组顺序就是标签页顺序；新增文件不登记会被 `--check` 拦住 |
 | `src/names.js` | 译名单点：按游戏分表，日文原名 → 汉化译名 |
 | `src/progress.lock.json` | 进度键快照：章节 id、标题、`warn` 数、收集项顺序、任务 id/名称/限时/二选一组 |
@@ -123,9 +126,11 @@ GAMES[]                     游戏
 ├─ quests[]                 全任务：{area, items:[{id, n, g, t, x, s, ns2, v, d, m, e, f, rw[]}]}
 ├─ catalog[]                全物品：{t, items:[{n, p, a, u, w}]}；武器/防具/收藏品
 ├─ catalogUsers[]           物品角色筛选：{n, armor, medium, mech}
+├─ catalogMeta{}            可选，改写 catalog 的文案与筛选：{title, tab, unit, stat, note, foot, filters[]}
 ├─ tips[]                   小技巧：{t, a}
 ├─ qa[]                     卡关急救：{q, a}
 ├─ checks[]                 收集清单分组：{t, items[]}
+├─ bossMeta{}               可选，改写 Boss 区块的标题：{title, tab}
 └─ bosses[]                 Boss 速查：{n, s, t}
 ```
 
@@ -156,7 +161,7 @@ GAMES[]                     游戏
 - **代码**（HTML 结构 / CSS / JS）：MIT，见 `LICENSE`。
 - **攻略正文**：CC BY-NC-SA 4.0——署名、非商业、相同方式共享。完整条款、原始来源与不涵盖的内容见 `LICENSE-CONTENT.md`。
 - **不收录**：游戏本体、ROM、汉化补丁、官方图像或攻略本扫描。发现被添加请直接回滚。
-- 游戏名称、角色、地名等著作权与商标归任天堂 / 万代南梦宫 / Monolith Soft 等各自权利人所有；本项目为非官方同人作品，与发行方无关。
+- 游戏名称、角色、地名等著作权与商标归任天堂 / Game Freak / The Pokémon Company / 万代南梦宫 / Monolith Soft 等各自权利人所有；本项目为非官方同人作品，与发行方无关。
 
 ## 验证
 
@@ -181,6 +186,7 @@ GAMES[]                     游戏
 
 - 幻想传说 X 核对名单：克雷斯 / 敏特 / 切斯特 / 克拉斯 / 阿琪 / 隆德莉涅 / 达奥斯 / 尤克里德 / 阿尔瓦尼斯坦 / 米德加尔斯 / 温蒂妮。
 - 永恒传说待核对：里德 / 法拉 / 基尔 / 梅露笛 / 雷斯 / 查特 / 佛格 / 希洁尔 / 涅瑞德 / 希亚德斯 / 蕾西丝 / 加迪安特 / 塞尔西乌斯，以及道具名（术士戒指、冰冻指环、分光镜、五刃短剑、艾克斯卡利巴）与晶灵术名。术名目前只保留日文灰字，没有臆造中文译名。
+- 宝可梦 Pokopia：城镇、道具、栖息地、特长没有可靠中文，保留英文灰字或英文原名；宝可梦与主系列招式用 PokéAPI 简体官方名，游戏内可能不同。图鉴从 Serebii 详情页抽取，未逐条进游戏对照；其余存疑项见 `--verbose`。
 - 永恒传说的流程事实来自两份日文攻略站，**不含中文一手资料**，全篇未逐条二次核对，两处来源的原始链接待补。各作的存疑项见 `--verbose`。
 - 永恒传说里仍有少量裸露日文（称号、部分道具与术名，如 `ころがしめいじん`、`アイフリードの洞窟`），目前查不到补丁译名，宁缺不编。
 - 多文件交付：拷机时必须带 `index.html`、`assets/`、`games/` 三样；只拷 `index.html` 会没有样式、脚本和数据。个别浏览器若禁止 `file://` 加载本地经典脚本，改用本地 http 服务。
@@ -200,4 +206,5 @@ GAMES[]                     游戏
 - 异度之刃任务、区域、Boss、殖民地6 复兴素材：[蒙纳多研究本部（xenoblade.cn）](https://xenoblade.cn/)
 - 异度之刃主线流程与 Boss 机制：[Game8《Xenoblade Chronicles: Definitive Edition》攻略](https://game8.co/games/Xenoblade-Chronicles-Definitive-Edition)
 - 异度之刃任务总数（480/481）、130 限时、25 组二选一：[Xenoblade Wiki（Fandom）](https://xenoblade.fandom.com/wiki/Quest_(XC1))
+- 宝可梦 Pokopia：[Serebii.net](https://www.serebii.net/pokemonpokopia/)、[Game8](https://game8.co/games/Pokemon-Pokopia/archives/583158)、[Nintendo Soup](https://nintendosoup.com/guide-how-to-befriend-all-legendary-pokemon-in-pokemon-pokopia)、[Pokopia Wiki](https://www.pokopiawiki.com/guides/how-to-befriend-with-raikou-entei-and-suicune)、[The Games Wiki](https://thegameswiki.com/pokopia/wiki/missable-events)；官方译名：[PokéAPI](https://github.com/PokeAPI/pokeapi/tree/master/data/v2/csv)
 - 汉化版存在性：幻想传说 X CHS 补丁 PSP 编号 `ULJS00293`；PS1《永恒传说》中文汉化版亦已存在（3 碟）

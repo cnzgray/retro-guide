@@ -172,6 +172,17 @@ function validate(name, g, problems) {
     if (!Array.isArray(g.catalogUsers) || !g.catalogUsers.every((u) => isStr(u?.n))) bad("catalogUsers 每项需要 n");
   }
 
+  if (g.catalogMeta !== undefined) {
+    if (!g.catalog) bad("catalogMeta 需要配合 catalog");
+    for (const k of ["title", "tab", "unit", "stat", "note", "foot"]) if (!isStr(g.catalogMeta?.[k])) bad(`catalogMeta 需要 ${k}`);
+    if (!isStrArr(g.catalogMeta?.filters) || !g.catalogMeta.filters.length) bad("catalogMeta.filters 必须是非空字符串数组");
+    else for (const f of g.catalogMeta.filters) if (!(g.catalog || []).some((grp) => grp.t === f)) bad(`catalogMeta.filters 没有对应分组：${f}`);
+  }
+
+  if (g.bossMeta !== undefined) {
+    for (const k of ["title", "tab"]) if (!isStr(g.bossMeta?.[k])) bad(`bossMeta 需要 ${k}`);
+  }
+
   if (g.tips !== undefined) {
     if (!Array.isArray(g.tips) || !g.tips.length) bad("tips 必须是非空数组");
     else g.tips.forEach((t, i) => { if (!isStr(t?.t) || !isStr(t?.a)) bad(`tips[${i}] 需要 t 与 a`); });
@@ -182,7 +193,9 @@ function validate(name, g, problems) {
     ...g.checks.flatMap((c) => [c.t, ...(c.items || [])]), ...g.qa.map((q) => q.q), ...g.bosses.flatMap((b) => [b.n, b.s]),
     ...(g.quests || []).flatMap((grp) => [grp.area, ...grp.items.flatMap((it) => [it.n, ...(it.g ? [it.g] : []), ...(it.d ? [it.d] : []), ...(it.rw || [])])]),
     ...(g.catalog || []).flatMap((grp) => [grp.t, ...grp.items.flatMap((it) => [it.n, ...(it.a ? [it.a] : []), ...(it.u ? [it.u] : [])])]),
-    ...(g.tips || []).map((t) => t.t)];
+    ...(g.tips || []).map((t) => t.t),
+    ...(g.catalogMeta ? [g.catalogMeta.title, g.catalogMeta.tab, g.catalogMeta.unit, g.catalogMeta.stat, ...(g.catalogMeta.filters || [])] : []),
+    ...(g.bossMeta ? [g.bossMeta.title, g.bossMeta.tab] : [])];
   plain.forEach((text) => { if (/<\/?[a-z]/i.test(text)) bad(`转义字段不能写 HTML 标签：${text}`); });
 
   walkStrings(g, g.id, (text, path) => {

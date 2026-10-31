@@ -35,7 +35,7 @@ const questList=()=>state.quests[gid()]||(state.quests[gid()]={});
 const isQuestDone=id=>!!questList()[String(id)];
 const ARMOR_CLASS={"轻":"轻型","中":"中型","重":"重型","机":"机界"};
 function panels(g){
-  return [["flow","流程"],...(g.quests?[["quests","任务"]]:[]),["help",g.tips?"急救与技巧":"急救"],...(g.catalog?[["catalog","物品"]]:[]),["collect","收集"],["boss","Boss"]];
+  return [["flow","流程"],...(g.quests?[["quests","任务"]]:[]),["help",g.tips?"急救与技巧":"急救"],...(g.catalog?[["catalog",g.catalogMeta?.tab||"物品"]]:[]),["collect","收集"],["boss",g.bossMeta?.tab||"Boss"]];
 }
 function showPanel(id,remember=true){
   const g=game();
@@ -64,9 +64,9 @@ function renderToc(){
     ${g.quests?`<a href="#quests" data-go="quests">全任务</a>`:""}
     <a href="#help" data-go="help">卡关急救</a>
     ${g.tips?`<a href="#tips" data-go="tips">小技巧</a>`:""}
-    ${g.catalog?`<a href="#catalog" data-go="catalog">全物品</a>`:""}
+    ${g.catalog?`<a href="#catalog" data-go="catalog">${esc(g.catalogMeta?.title||"全物品")}</a>`:""}
     <a href="#collect" data-go="collect">收集清单</a>
-    <a href="#boss" data-go="boss">Boss 速查</a>
+    <a href="#boss" data-go="boss">${esc(g.bossMeta?.title||"Boss 速查")}</a>
     <div class="tgroup">章节</div>`;
   h+=g.chapters.map(c=>`<a href="#ch-${c.id}" data-go="ch-${c.id}" class="sub ${isDone(c.id)?"done":""}">${c.n}. ${esc(c.title)}</a>`).join("");
   $("#toc").innerHTML=h;
@@ -173,6 +173,8 @@ function tipsHTML(g){
 }
 
 function catalogHTML(g){
+  const meta=g.catalogMeta;
+  const unit=meta?.unit||"件";
   const all=g.catalog.flatMap(grp=>grp.items);
   const body=g.catalog.map((grp,gi)=>{
     const items=grp.items.map(it=>{
@@ -181,17 +183,15 @@ function catalogHTML(g){
       const meta=[it.u?`<span class="cuser">${esc(it.u)}</span>`:"",cls?`<span class="cuser">${cls}</span>`:"",it.p?`<span class="cprice">${it.p}G</span>`:"",it.a?esc(it.a):""].filter(Boolean).join(" · ");
       return `<div class="citem" data-search="${esc(search)}" data-igroup="${esc(grp.t)}"${it.u?` data-iuser="${esc(it.u)}"`:""}${it.w?` data-iclass="${it.w}"`:""}><span class="cname">${esc(it.n)}<i class="qbadge v cneed">需技能</i></span><span class="cmeta">${meta}</span></div>`;
     }).join("");
-    return `<details class="qgroup" data-igroup="${esc(grp.t)}"><summary><span class="qarea">${esc(grp.t)}</span><span class="qcnt" data-icnt="${gi}">${grp.items.length} 件</span></summary><div class="qitems">${items}</div></details>`;
+    return `<details class="qgroup" data-igroup="${esc(grp.t)}"><summary><span class="qarea">${esc(grp.t)}</span><span class="qcnt" data-icnt="${gi}">${grp.items.length} ${esc(unit)}</span></summary><div class="qitems">${items}</div></details>`;
   }).join("");
   return `<div class="qhead">
-    <div class="qstats"><b>${all.length}</b><span>件装备与收藏品</span><span class="qmax">按类型折叠</span></div>
-    <div class="qnote">武器 / 防具 / 收藏品；素材与关键物品没有独立物品页，散落在任务报酬和殖民地6 清单里。装备行显示价格与基础数值，收藏品行显示区域与类别。</div>
+    <div class="qstats"><b>${all.length}</b><span>${esc(meta?.stat||"件装备与收藏品")}</span><span class="qmax">按类型折叠</span></div>
+    <div class="qnote">${meta?.note||"武器 / 防具 / 收藏品；素材与关键物品没有独立物品页，散落在任务报酬和殖民地6 清单里。装备行显示价格与基础数值，收藏品行显示区域与类别。"}</div>
   </div>
   <div class="qchips" id="ifilters">
     <button class="qchip on" data-ifilter="all">全部</button>
-    <button class="qchip" data-ifilter="武器">武器</button>
-    <button class="qchip" data-ifilter="防具">防具</button>
-    <button class="qchip" data-ifilter="收藏品">收藏品</button>
+    ${(meta?.filters||["武器","防具","收藏品"]).map(f=>`<button class="qchip" data-ifilter="${esc(f)}">${esc(f)}</button>`).join("")}
     <button class="qchip sep" data-iexpand="1">展开全部</button>
     <button class="qchip" data-iexpand="0">收起全部</button>
   </div>
@@ -205,7 +205,7 @@ function catalogHTML(g){
   </div>
   <p class="qfoot" id="iusernote" hidden></p>`:""}
   <div id="igroups">${body}</div>
-  <p class="qfoot">物品名为官方中文；[0]/[1]/[2] 是装备插槽数。基础数值只列攻击/防御，宝石、特性等细节以游戏内为准。${g.catalogUsers?"武器为角色专属。轻型防具全员可穿；中型只有修尔克、莱恩、卡尔娜、丹邦一开始就能穿，其他角色和重型防具都要靠技能或技能连接解锁；机界防具仅菲奥伦可穿。标「需技能」的条目是否已解锁、具体能否装备以游戏内为准。":""}</p>`;
+  <p class="qfoot">${meta?.foot||""}${meta?"":"物品名为官方中文；[0]/[1]/[2] 是装备插槽数。基础数值只列攻击/防御，宝石、特性等细节以游戏内为准。"}${g.catalogUsers?"武器为角色专属。轻型防具全员可穿；中型只有修尔克、莱恩、卡尔娜、丹邦一开始就能穿，其他角色和重型防具都要靠技能或技能连接解锁；机界防具仅菲奥伦可穿。标「需技能」的条目是否已解锁、具体能否装备以游戏内为准。":""}</p>`;
 }
 
 function itemUserAllows(el,u){
@@ -231,6 +231,7 @@ function applyItemFilter(filter){
     if(itemFilter==="武器")ok=type==="武器";
     else if(itemFilter==="防具")ok=armor.has(type);
     else if(itemFilter==="收藏品")ok=type==="收藏品";
+    else if(itemFilter!=="all")ok=type===itemFilter;
     const allow=itemUserAllows(el,user);
     if(ok)ok=allow.ok;
     if(ok&&itemClass)ok=el.dataset.iclass===itemClass;
@@ -247,7 +248,7 @@ function applyItemFilter(filter){
   const any=document.querySelectorAll("#catalog .citem:not(.hidden)").length;
   let nr=document.getElementById("inores");
   if(!any&&narrowed){
-    if(!nr){nr=document.createElement("div");nr.id="inores";nr.className="nores";nr.textContent="没有匹配的物品";$("#igroups").appendChild(nr);}
+    if(!nr){nr=document.createElement("div");nr.id="inores";nr.className="nores";nr.textContent="没有匹配的条目";$("#igroups").appendChild(nr);}
   }else if(nr)nr.remove();
   document.querySelectorAll("#ifilters [data-ifilter]").forEach(b=>b.classList.toggle("on",b.dataset.ifilter===itemFilter));
   document.querySelectorAll("#iusers [data-iuser]").forEach(b=>b.classList.toggle("on",b.dataset.iuser===itemUser));
@@ -410,7 +411,7 @@ function build(){
 
   ${g.tips?`<section id="tips"><h2 class="sec">小技巧</h2>${tipsHTML(g)}</section>`:""}
   </div>
-  ${g.catalog?`<section id="catalog" data-panel="catalog"><h2 class="sec">全物品</h2>${catalogHTML(g)}</section>`:""}
+  ${g.catalog?`<section id="catalog" data-panel="catalog"><h2 class="sec">${esc(g.catalogMeta?.title||"全物品")}</h2>${catalogHTML(g)}</section>`:""}
 
   <div data-panel="collect">
   <h2 class="sec" id="collect">收集清单</h2>
@@ -425,7 +426,7 @@ function build(){
   </div>
 
   <div data-panel="boss">
-  <h2 class="sec" id="boss">Boss 速查</h2>
+  <h2 class="sec" id="boss">${esc(g.bossMeta?.title||"Boss 速查")}</h2>
   <div id="bosses">${g.bosses.length?g.bosses.map(b=>`<div class="card"><div class="bossrow" data-search="${esc((b.n+" "+b.s+" "+b.t).toLowerCase())}"><div class="bn">${esc(b.n)}<small>${esc(b.s)}</small></div><div class="bt">${b.t}</div></div></div>`).join(""):'<div class="nores">内容整理中…</div>'}</div>
   </div>
   `;
