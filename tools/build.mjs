@@ -1,24 +1,40 @@
 #!/usr/bin/env node
-// 把 src/ 拼成单文件 index.html。
-//   node tools/build.mjs              生成 index.html
-//   node tools/build.mjs --check      只校验（CI 用），产物不一致或有问题时退出 1
+// 把 src/ 生成为多文件站点：index.html + assets/ + games/。
+//   node tools/build.mjs              生成 index.html 与 assets/、games/
+//   node tools/build.mjs --check      只校验（CI 用），任一产物不一致或有问题时退出 1
 //   node tools/build.mjs --rename A=B --game <id>  把该游戏的中文名 A 改为 B，同步 src/names.js 与进度快照
-//   node tools/build.mjs --lock       确认进度键变更，更新 src/progress.lock.json（章节 id 只增不删）
+//   node tools/build.mjs --lock       确认进度键变更，更新 src/progress.lock.json（章节/任务 id 只增不删）
 //   node tools/build.mjs --verbose    额外打印译名覆盖率与存疑清单
-import { existsSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, readdirSync, mkdirSync, unlinkSync } from "node:fs";
 import { basename, join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import vm from "node:vm";
 import { NAMES } from "../src/names.js";
+import { GAME_IDS } from "../src/games/index.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SHELL = join(ROOT, "src/shell.html");
+const APP_CSS = join(ROOT, "src/app.css");
+const APP_JS = join(ROOT, "src/app.js");
 const GAMES_DIR = join(ROOT, "src/games");
 const NAMES_PATH = join(ROOT, "src/names.js");
 const LOCK_PATH = join(ROOT, "src/progress.lock.json");
 const LICENSE_PATH = join(ROOT, "LICENSE-CONTENT.md");
 const OUT = join(ROOT, "index.html");
-const PLACEHOLDER = "/* __GAMES__ */";
+const OUT_ASSETS = join(ROOT, "assets");
+const OUT_GAMES = join(ROOT, "games");
+const OUT_APP_CSS = join(OUT_ASSETS, "app.css");
+const OUT_APP_JS = join(OUT_ASSETS, "app.js");
+const OUT_THEMES = join(OUT_ASSETS, "themes.css");
+const OUT_GAME_INDEX = join(OUT_GAMES, "index.js");
+const SCRIPTS_PLACEHOLDER = "<!-- __GAME_SCRIPTS__ -->";
+const THEME_VARS = [
+  "--bg", "--panel", "--panel2", "--line", "--line2",
+  "--acc", "--acc2", "--acc-ink", "--done-title", "--focus",
+  "--glow1", "--glow2", "--pbar-a", "--pbar-b",
+  "--a04", "--a06", "--a09", "--a10", "--a12", "--a15",
+  "--a22", "--a28", "--a45", "--a70",
+];
 // 用 body 默认主题的游戏，不需要 data-game 主题块
 const DEFAULT_GAME = "minish";
 const JP = (n) => `<i class='jp'>${n}</i>`;
@@ -36,11 +52,9 @@ function walkStrings(value, path, visit) {
   }
 }
 
+// 游戏列表与顺序由 src/games/index.js 的 GAME_IDS 决定
 function gameFiles() {
-  return readdirSync(GAMES_DIR)
-    .filter((f) => f.endsWith(".js"))
-    .sort()
-    .map((f) => join(GAMES_DIR, f));
+  return GAME_IDS.map((id) => join(GAMES_DIR, `${id}.js`));
 }
 
 async function readGame(path) {
@@ -59,8 +73,9 @@ function validate(name, g, problems) {
   const bad = (m) => problems.push(`${name}: ${m}`);
   for (const k of ["id", "title", "sub", "short", "tabs"]) if (!isStr(g[k])) bad(`缺少字段 ${k}`);
   if (g.id !== basename(name, ".js")) bad(`id=${g.id} 与文件名不一致`);
-  if (!Number.isInteger(g.order)) bad("order 必须是整数（标签页顺序）");
-  if (!/^#[0-9a-f]{6}$/i.test(g.accent)) bad("accent 必须是 #rrggbb（标签圆点色）");
+  if (!g.theme || typeof g.theme !== "object" || Array.isArray(g.theme)) bad("theme 必须是对象（主题 CSS 变量）");
+  else for (const k of THEME_VARS) if (!isStr(g.theme[k])) bad(`theme 缺少变量 ${k}`);
+  if (g.theme && g.theme["--acc"] && !/^#[0-9a-f]{6}$/i.test(g.theme["--acc"])) bad("theme[\"--acc\"] 必须是 #rrggbb（标签圆点色）");
   for (const k of ["metas", "intro", "sources"]) if (!isStrArr(g[k]) || !g[k].length) bad(`${k} 必须是非空字符串数组`);
   if (g.unverified !== undefined && !isStrArr(g.unverified)) bad("unverified 必须是字符串数组");
   for (const k of ["chapters", "qa", "checks", "bosses"]) {
@@ -88,9 +103,80 @@ function validate(name, g, problems) {
   g.checks.forEach((c, i) => { if (!isStr(c.t) || !isStrArr(c.items)) bad(`checks[${i}] 需要 t 与 items`); });
   g.bosses.forEach((b, i) => { if (!isStr(b.n) || !isStr(b.s) || !isStr(b.t)) bad(`bosses[${i}] 需要 n、s、t`); });
 
+  if (g.quests !== undefined) {
+    if (!Array.isArray(g.quests) || !g.quests.length) bad("quests 必须是非空数组");
+    else {
+      const ids = new Set(), areas = new Set(), pairs = new Map();
+      g.quests.forEach((grp, gi) => {
+        const at = `quests[${gi}]`;
+        if (!isStr(grp.area)) bad(`${at} 需要 area`);
+        else if (areas.has(grp.area)) bad(`${at} 区域重复 —— ${grp.area}`);
+        else areas.add(grp.area);
+        if (!Array.isArray(grp.items) || !grp.items.length) return bad(`${at} 需要非空 items`);
+        if (grp.d !== undefined && !isStr(grp.d)) bad(`${at}.d 必须是字符串`);
+        grp.items.forEach((it, ii) => {
+          const qat = `${at}.items[${ii}]`;
+          const id = it.id;
+          if (!(Number.isInteger(id) && id > 0) && !isStr(id)) bad(`${qat} 需要正整数 id 或非空字符串 id`);
+          else if (ids.has(String(id))) bad(`任务 id 重复 —— ${id}`);
+          else ids.add(String(id));
+          if (!isStr(it.n)) bad(`${qat} 需要 n`);
+          if (it.g !== undefined && !isStr(it.g)) bad(`${qat}.g 必须是字符串`);
+          for (const k of ["t", "s", "ns2", "v"]) {
+            if (it[k] !== undefined && it[k] !== 1 && it[k] !== true) bad(`${qat}.${k} 只能是 1/true`);
+          }
+          if (it.x !== undefined) {
+            if (!isStr(it.x)) bad(`${qat}.x 必须是字符串`);
+            else {
+              if (!pairs.has(it.x)) pairs.set(it.x, []);
+              pairs.get(it.x).push(id);
+            }
+          }
+          if (it.d !== undefined && !isStr(it.d)) bad(`${qat}.d 必须是字符串`);
+          for (const k of ["m", "e", "f"]) {
+            if (it[k] !== undefined && !(Number.isInteger(it[k]) && it[k] >= 0)) bad(`${qat}.${k} 必须是非负整数`);
+          }
+          if (it.rw !== undefined && !isStrArr(it.rw)) bad(`${qat}.rw 必须是字符串数组`);
+        });
+      });
+      for (const [x, arr] of pairs) if (arr.length !== 2) bad(`二选一组 ${x} 必须有 2 条任务，实际 ${arr.length}`);
+      for (const grp of g.quests) for (const it of grp.items) {
+        if (it.t && !isStr(it.d) && !isStr(grp.d)) bad(`任务 ${it.id} 是限时任务，需要 d（期限）`);
+      }
+    }
+  }
+
+  if (g.catalog !== undefined) {
+    if (!Array.isArray(g.catalog) || !g.catalog.length) bad("catalog 必须是非空数组");
+    else {
+      const types = new Set();
+      g.catalog.forEach((grp, gi) => {
+        const at = `catalog[${gi}]`;
+        if (!isStr(grp.t)) bad(`${at} 需要 t`);
+        else if (types.has(grp.t)) bad(`${at} 类型重复 —— ${grp.t}`);
+        else types.add(grp.t);
+        if (!Array.isArray(grp.items) || !grp.items.length) return bad(`${at} 需要非空 items`);
+        grp.items.forEach((it, ii) => {
+          const iat = `${at}.items[${ii}]`;
+          if (!isStr(it.n)) bad(`${iat} 需要 n`);
+          if (it.p !== undefined && !(Number.isInteger(it.p) && it.p >= 0)) bad(`${iat}.p 必须是非负整数`);
+          if (it.a !== undefined && !isStr(it.a)) bad(`${iat}.a 必须是字符串`);
+        });
+      });
+    }
+  }
+
+  if (g.tips !== undefined) {
+    if (!Array.isArray(g.tips) || !g.tips.length) bad("tips 必须是非空数组");
+    else g.tips.forEach((t, i) => { if (!isStr(t?.t) || !isStr(t?.a)) bad(`tips[${i}] 需要 t 与 a`); });
+  }
+
   // 这些字段渲染时走 esc()，写标签会把 HTML 源码直接显示给玩家
   const plain = [g.title, g.short, g.tabs, ...g.chapters.flatMap((c) => [c.title, c.area, ...(c.items || [])]),
-    ...g.checks.flatMap((c) => [c.t, ...(c.items || [])]), ...g.qa.map((q) => q.q), ...g.bosses.flatMap((b) => [b.n, b.s])];
+    ...g.checks.flatMap((c) => [c.t, ...(c.items || [])]), ...g.qa.map((q) => q.q), ...g.bosses.flatMap((b) => [b.n, b.s]),
+    ...(g.quests || []).flatMap((grp) => [grp.area, ...grp.items.flatMap((it) => [it.n, ...(it.g ? [it.g] : []), ...(it.d ? [it.d] : []), ...(it.rw || [])])]),
+    ...(g.catalog || []).flatMap((grp) => [grp.t, ...grp.items.flatMap((it) => [it.n, ...(it.a ? [it.a] : [])])]),
+    ...(g.tips || []).map((t) => t.t)];
   plain.forEach((text) => { if (/<\/?[a-z]/i.test(text)) bad(`转义字段不能写 HTML 标签：${text}`); });
 
   walkStrings(g, g.id, (text, path) => {
@@ -102,11 +188,22 @@ function validate(name, g, problems) {
   });
 }
 
-// 新游戏要改的外壳位置：缺一处页面仍能跑，只是主题错，所以由构建兜底
-function shellIssues(shell, ids) {
+// 主题变量在游戏数据里，构建时生成静态 CSS；默认游戏写进 :root，其余写 body[data-game]
+function themeCSS(games) {
+  const vars = (theme) => THEME_VARS.map((k) => `${k}:${theme[k]}`).join(";");
+  const def = games.find(({ data: g }) => g.id === DEFAULT_GAME) || games[0];
+  let css = `:root{${vars(def.data.theme)}}\n`;
+  for (const { data: g } of games) {
+    if (g.id !== def.data.id) css += `body[data-game="${g.id}"]{${vars(g.theme)}}\n`;
+  }
+  return css;
+}
+
+function shellIssues(shell) {
   const issues = [];
-  for (const id of ids) {
-    if (id !== DEFAULT_GAME && !shell.includes(`body[data-game="${id}"]`)) issues.push(`${id}: src/shell.html 缺少主题 body[data-game="${id}"]`);
+  if (!shell.includes(SCRIPTS_PLACEHOLDER)) issues.push(`src/shell.html 缺少游戏脚本占位符 ${SCRIPTS_PLACEHOLDER}`);
+  for (const ref of ["assets/themes.css", "assets/app.css", "games/index.js", "assets/app.js"]) {
+    if (!shell.includes(ref)) issues.push(`src/shell.html 缺少 ${ref}`);
   }
   return issues;
 }
@@ -126,23 +223,34 @@ function htmlIssues(html) {
   if (/(?:src|href|action)\s*=\s*["']?(?:https?:)?\/\/|url\(\s*["']?(?:https?:)?\/\/|@import/i.test(html))
     issues.push("产物里出现外链资源，违反零外链约束");
   if (!/<link rel="icon"[^>]+href="data:image\/svg\+xml,/.test(html)) issues.push("产物缺少内联 favicon");
-  const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)];
-  if (!scripts.length) issues.push("产物里没有内联脚本");
-  for (const [, code] of scripts) {
+  if (/<style\b/i.test(html)) issues.push("骨架里有内联样式，样式应放在 src/app.css");
+  if (/<script(?![^>]*\bsrc=)[^>]*>/i.test(html)) issues.push("骨架里有内联脚本，脚本应放在 src/app.js");
+  return issues;
+}
+
+function assetIssues(appCss, appJs, themesCss, gameScripts) {
+  const issues = [];
+  const external = /(?:url\(\s*["']?(?:https?:)?\/\/|@import\s+(?:url\()?["']?(?:https?:)?\/\/)/i;
+  for (const [label, text] of [["src/app.css", appCss], ["assets/themes.css", themesCss]]) {
+    if (external.test(text)) issues.push(`${label} 里出现外链资源，违反零外链约束`);
+  }
+  if (!appJs.includes("window.RETRO_GAME_IDS")) issues.push("src/app.js 没有读取 games/index.js 的注册表");
+  for (const [label, code] of [["src/app.js", appJs], ...gameScripts.map((g) => [`games/${g.id}.js`, g.code])]) {
     try {
       new vm.Script(code);
     } catch (e) {
-      issues.push(`产物内联脚本语法错误：${e.message}`);
+      issues.push(`${label} 语法错误：${e.message}`);
     }
   }
   return issues;
 }
 
-// 进度键快照：章节进度按 id 存，收集清单按「组序号-项序号」存，两者都不能悄悄错位
+// 进度键快照：章节进度按 id 存，收集清单按「组序号-项序号」存，任务按任务 id 存
 function snapshot(games) {
   return Object.fromEntries(games.map(({ data: g }) => [g.id, {
     chapters: Object.fromEntries((g.chapters || []).map((c) => [c.id, { title: c.title, warn: (c.warn || []).length }])),
     checks: (g.checks || []).map((grp) => grp.items || []),
+    ...(g.quests ? { quests: Object.fromEntries(g.quests.flatMap((grp) => grp.items.map((it) => [String(it.id), { n: it.n, t: it.t ? 1 : 0, x: it.x || "" }]))) } : {}),
   }]));
 }
 
@@ -164,6 +272,19 @@ function lockIssues(lock, next) {
     now.checks.forEach((items, gi) => {
       if (items.length > (was.checks[gi]?.length ?? 0)) drift.push(`${id}: 收集清单第 ${gi} 组有新增项未登记`);
     });
+    if (was.quests) {
+      if (!now.quests) gone.push(`${id}: 任务表被移除，玩家任务进度会丢`);
+      else {
+        for (const [qid, q] of Object.entries(was.quests)) {
+          const cur = now.quests[qid];
+          if (!cur) { gone.push(`${id}: 任务 id ${qid} 消失，玩家进度会丢`); continue; }
+          if (cur.n !== q.n) drift.push(`${id}: 任务 ${qid} 名称「${q.n}」→「${cur.n}」，确认没有换成别的任务`);
+          if (cur.t !== q.t) drift.push(`${id}: 任务 ${qid} 的限时标记变了`);
+          if (cur.x !== q.x) drift.push(`${id}: 任务 ${qid} 的二选一组变了`);
+        }
+        for (const qid of Object.keys(now.quests)) if (!was.quests[qid]) drift.push(`${id}: 新任务 ${qid} 未登记`);
+      }
+    } else if (now.quests) drift.push(`${id}: 新增任务表未登记`);
   }
   for (const id of Object.keys(next)) if (!lock[id]) drift.push(`${id}: 新游戏未登记`);
   return { gone, drift };
@@ -237,29 +358,65 @@ function rename(game, oldCn, newCn) {
 
 async function build() {
   const problems = [];
+  const missing = GAME_IDS.filter((id) => !existsSync(join(GAMES_DIR, `${id}.js`)));
+  if (missing.length) throw new Error(`src/games/index.js 里的游戏没有数据文件：${missing.join("、")}`);
   const files = gameFiles();
-  if (!files.length) throw new Error("src/games/ 下没有游戏文件");
+  if (!files.length) throw new Error("src/games/index.js 里没有游戏");
 
   const parsed = await Promise.all(files.map((f) => readGame(f)));
   parsed.forEach((g) => validate(g.path.slice(ROOT.length + 1), g.data, problems));
   const ids = parsed.map((g) => g.data.id);
   ids.forEach((id, i) => { if (ids.indexOf(id) !== i) problems.push(`游戏 id 重复 —— ${id}`); });
-  parsed.sort((a, b) => a.data.order - b.data.order);
 
-  const data = parsed.map((g) => g.body).join(",\n");
+  const indexed = new Set(GAME_IDS.map((id) => `${id}.js`));
+  for (const f of readdirSync(GAMES_DIR).filter((f) => f.endsWith(".js") && f !== "index.js")) {
+    if (!indexed.has(f)) problems.push(`src/games/${f} 未在 src/games/index.js 中登记`);
+  }
+
+  const appCss = readFileSync(APP_CSS, "utf8");
+  const appJs = readFileSync(APP_JS, "utf8");
+  const themesCss = themeCSS(parsed);
+  const gameIndexJs = `window.RETRO_GAME_IDS = ${JSON.stringify(GAME_IDS)};\n`;
+  const gameScripts = parsed.map(({ data: g, body }) => ({
+    id: g.id,
+    code: `(window.RETRO_GAMES=window.RETRO_GAMES||{})[${JSON.stringify(g.id)}]=${body.trim()};\n`,
+  }));
   const shell = readFileSync(SHELL, "utf8");
-  if (!shell.includes(PLACEHOLDER)) throw new Error(`src/shell.html 缺少占位符 ${PLACEHOLDER}`);
-  const html = shell.replace(PLACEHOLDER, () => data);
+  if (!shell.includes(SCRIPTS_PLACEHOLDER)) throw new Error(`src/shell.html 缺少游戏脚本占位符 ${SCRIPTS_PLACEHOLDER}`);
+  const scriptTags = GAME_IDS.map((id) => `<script src="games/${id}.js"></script>`).join("\n");
+  const html = shell.replace(SCRIPTS_PLACEHOLDER, () => scriptTags);
 
   parsed.forEach((g) => problems.push(...nameIssues(g.data.id, g.body, has("--verbose"))));
-  problems.push(...shellIssues(shell, ids), ...sourceIssues(shell, parsed), ...htmlIssues(html));
+  problems.push(
+    ...shellIssues(shell),
+    ...sourceIssues(shell, parsed),
+    ...htmlIssues(html),
+    ...assetIssues(appCss, appJs, themesCss, gameScripts),
+  );
   if (has("--verbose")) parsed.forEach(({ data: g }) => (g.unverified || []).forEach((u) => console.log(`存疑：${g.id}: ${u}`)));
+
+  const outputs = new Map([
+    [OUT, html],
+    [OUT_APP_CSS, appCss],
+    [OUT_APP_JS, appJs],
+    [OUT_THEMES, themesCss],
+    [OUT_GAME_INDEX, gameIndexJs],
+    ...gameScripts.map(({ id, code }) => [join(OUT_GAMES, `${id}.js`), code]),
+  ]);
+  const expected = new Set(outputs.keys());
+  const stale = [];
+  if (existsSync(OUT_GAMES)) {
+    for (const f of readdirSync(OUT_GAMES).filter((f) => f.endsWith(".js"))) {
+      const p = join(OUT_GAMES, f);
+      if (!expected.has(p)) stale.push(p);
+    }
+  }
 
   const next = snapshot(parsed);
   const lock = existsSync(LOCK_PATH) ? JSON.parse(readFileSync(LOCK_PATH, "utf8")) : null;
   const { gone, drift } = lock ? lockIssues(lock, next) : { gone: [], drift: ["缺少 src/progress.lock.json：跑 `node tools/build.mjs --lock`"] };
 
-  return { html, problems, games: files.length, next, gone, drift };
+  return { html, outputs, stale, problems, games: files.length, next, gone, drift };
 }
 
 const renameArg = args.find((a) => a.startsWith("--rename"));
@@ -272,7 +429,7 @@ if (renameArg) {
   process.exit(0);
 }
 
-const { html, problems, games, next, gone, drift } = await build();
+const { outputs, stale, problems, games, next, gone, drift } = await build();
 
 if (has("--lock")) {
   [...problems, ...gone].forEach((p) => console.error(p));
@@ -288,17 +445,21 @@ if (has("--lock")) {
 problems.push(...gone, ...drift);
 if (gone.length || drift.length) problems.push("进度键有变更：确认不影响玩家进度后跑 `node tools/build.mjs --lock`（章节 id 不能删除）");
 problems.forEach((p) => console.error(p));
-const bytes = Buffer.byteLength(html);
+const bytes = [...outputs.values()].reduce((s, c) => s + Buffer.byteLength(c), 0);
 
 if (has("--check")) {
-  let current = "";
-  try {
-    current = readFileSync(OUT, "utf8");
-  } catch {}
-  const drift = current !== html;
-  if (drift) console.error("index.html 与 src/ 不一致：跑 `node tools/build.mjs` 重新生成");
-  const fail = problems.length > 0 || drift;
-  console.log(`${fail ? "✗" : "✓"} check：${games} 个游戏，${bytes} 字节，问题 ${problems.length} 条，漂移 ${drift ? "有" : "无"}`);
+  const driftFiles = [];
+  for (const [path, content] of outputs) {
+    let current = "";
+    try {
+      current = readFileSync(path, "utf8");
+    } catch {}
+    if (current !== content) driftFiles.push(path.slice(ROOT.length + 1));
+  }
+  if (driftFiles.length) console.error(`以下产物与 src/ 不一致：${driftFiles.join("、")}；跑 \`node tools/build.mjs\` 重新生成`);
+  if (stale.length) console.error(`以下产物已无对应游戏：${stale.map((p) => p.slice(ROOT.length + 1)).join("、")}；跑 \`node tools/build.mjs\` 清理`);
+  const fail = problems.length > 0 || driftFiles.length > 0 || stale.length > 0;
+  console.log(`${fail ? "✗" : "✓"} check：${games} 个游戏，${bytes} 字节，问题 ${problems.length} 条，漂移 ${driftFiles.length} 个文件${stale.length ? `，多余 ${stale.length} 个` : ""}`);
   process.exit(fail ? 1 : 0);
 }
 
@@ -306,5 +467,9 @@ if (problems.length) {
   console.error(`✗ 构建中止：${problems.length} 条问题`);
   process.exit(1);
 }
-writeFileSync(OUT, html);
-console.log(`✓ 生成 index.html：${games} 个游戏，${bytes} 字节`);
+for (const p of stale) unlinkSync(p);
+for (const [path, content] of outputs) {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, content);
+}
+console.log(`✓ 生成 index.html + assets/ + games/：${games} 个游戏，${bytes} 字节`);

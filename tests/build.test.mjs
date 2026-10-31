@@ -9,12 +9,15 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const ETERNIA = "src/games/eternia.js";
+const XENOBLADE = "src/games/xenoblade.js";
+const APP_CSS = "src/app.css";
+const APP_JS = "src/app.js";
 const SHELL = "src/shell.html";
 
 function sandbox(t) {
   const dir = mkdtempSync(join(tmpdir(), "guide-test-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  for (const p of ["src", "tools", "index.html", "LICENSE-CONTENT.md"]) cpSync(join(ROOT, p), join(dir, p), { recursive: true });
+  for (const p of ["src", "tools", "index.html", "assets", "games", "LICENSE-CONTENT.md"]) cpSync(join(ROOT, p), join(dir, p), { recursive: true });
   const run = (...args) => {
     const r = spawnSync("node", ["tools/build.mjs", ...args], { cwd: dir, encoding: "utf8" });
     return { code: r.status, out: r.stdout + r.stderr };
@@ -26,7 +29,8 @@ function sandbox(t) {
     assert.notEqual(after, before, `注入未生效：${file}`);
     writeFileSync(path, after);
   };
-  return { run, edit, read: (file) => readFileSync(join(dir, file), "utf8") };
+  const write = (file, content) => writeFileSync(join(dir, file), content);
+  return { run, edit, read: (file) => readFileSync(join(dir, file), "utf8"), write };
 }
 
 function assertFails(t, file, fn, expected) {
@@ -42,12 +46,20 @@ test("当前源码通过校验", (t) => {
   assert.equal(code, 0, out);
 });
 
+test("游戏文件未进索引", (t) => {
+  const { run, write } = sandbox(t);
+  write("src/games/orphan.js", 'export default { id:"orphan" };\n');
+  const { code, out } = run("--check");
+  assert.equal(code, 1, out);
+  assert.match(out, /src\/games\/orphan\.js 未在 src\/games\/index\.js 中登记/);
+});
+
 test("数据语法错误", (t) => {
   assertFails(t, ETERNIA, (s) => s.replace('goal:"追上法拉', "goal:追上法拉"), /数据无法解析/);
 });
 
-test("外壳内联脚本语法错误", (t) => {
-  assertFails(t, SHELL, (s) => s.replace('const KEY="retroGuide.v1";', "const KEY=;"), /内联脚本语法错误/);
+test("app.js 语法错误", (t) => {
+  assertFails(t, APP_JS, (s) => s.replace('const KEY="retroGuide.v1";', "const KEY=;"), /src\/app\.js 语法错误/);
 });
 
 test("章节写法带空格时校验不失效", (t) => {
@@ -67,15 +79,43 @@ test("外链：单引号 script", (t) => {
 });
 
 test("外链：CSS url()", (t) => {
-  assertFails(t, SHELL, (s) => s.replace("*{box-sizing", "a{background:url(https://example.com/x.png)}\n  *{box-sizing"), /外链/);
+  assertFails(t, APP_CSS, (s) => s.replace("*{box-sizing", "a{background:url(https://example.com/x.png)}\n  *{box-sizing"), /外链/);
 });
 
 test("favicon 必须内联", (t) => {
   assertFails(t, SHELL, (s) => s.replace(/<link rel="icon"[^>]*>\n/, ""), /缺少内联 favicon/);
 });
 
-test("主题缺失", (t) => {
-  assertFails(t, SHELL, (s) => s.replace('body[data-game="eternia"]', 'body[data-game="nope"]'), /缺少主题/);
+test("主题变量缺失", (t) => {
+  assertFails(t, ETERNIA, (s) => s.replace('"--acc":"#b48cff",', ""), /theme 缺少变量 --acc/);
+});
+
+test("脚本占位符缺失", (t) => {
+  assertFails(t, SHELL, (s) => s.replace("<!-- __GAME_SCRIPTS__ -->", ""), /缺少游戏脚本占位符/);
+});
+
+test("多文件产物漂移", (t) => {
+  assertFails(t, APP_CSS, (s) => s + "\n/* drift */\n", /产物与 src\/ 不一致/);
+});
+
+test("任务 id 重复", (t) => {
+  assertFails(t, XENOBLADE, (s) => s.replace('{id:13,n:"恋爱成就·男性篇"', '{id:12,n:"恋爱成就·男性篇"'), /任务 id 重复/);
+});
+
+test("二选一组不是 2 条", (t) => {
+  assertFails(t, XENOBLADE, (s) => s.replace('"恋爱成就·男性篇",g:"阿道夫",t:1,x:"c9-1"', '"恋爱成就·男性篇",g:"阿道夫",t:1'), /二选一组 c9-1 必须有 2 条任务/);
+});
+
+test("限时任务缺期限", (t) => {
+  assertFails(t, XENOBLADE, (s) => s.replace('"服药时间",g:"奥尔嘉",t:1,d:"第５章 离开难民营地前"', '"服药时间",g:"奥尔嘉",t:1'), /任务 116 是限时任务，需要 d/);
+});
+
+test("物品类型重复", (t) => {
+  assertFails(t, XENOBLADE, (s) => s.replace('{t:"武器",items:[', '{t:"收藏品",items:['), /类型重复/);
+});
+
+test("小技巧缺字段", (t) => {
+  assertFails(t, XENOBLADE, (s) => s.replace('{t:"普攻自动，战技取消后摇",a:"普通攻击是自动的；放战技可以取消普攻后摇。走位到侧面或背面再放战技，伤害更高。"}', '{t:"普攻自动，战技取消后摇"}'), /tips\[0\] 需要 t 与 a/);
 });
 
 test("warn 被清空", (t) => {
