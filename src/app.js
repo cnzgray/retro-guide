@@ -23,6 +23,7 @@ let questFilter="all";
 let itemFilter="all";
 let itemUser="";
 let itemClass="";
+let itemSort="value";
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 
 const $=(s,r=document)=>r.querySelector(s);
@@ -172,14 +173,36 @@ function tipsHTML(g){
   }).join("")}</div>`;
 }
 
+function itemSortAttrs(it){
+  const a=it.a||"";
+  const atk=a.match(/^攻 (\d+)–(\d+)/);
+  const def=a.match(/^物防 (\d+) \/ 以太防 (\d+)/);
+  const value=atk?Number(atk[2])*10000+Number(atk[1]):def?Number(def[1])+Number(def[2]):-1;
+  return {ivalue:String(value),iprice:String(it.p??-1),iname:it.n,iarea:atk||def?"":a};
+}
+function compareItems(a,b,sort){
+  const byName=()=>a.iname.localeCompare(b.iname,"zh-Hans-CN");
+  if(sort==="name")return byName();
+  if(sort==="price")return Number(b.iprice)-Number(a.iprice)||byName();
+  return Number(b.ivalue)-Number(a.ivalue)||a.iarea.localeCompare(b.iarea,"zh-Hans-CN")||byName();
+}
+function applyItemSort(sort){
+  itemSort=sort;
+  document.querySelectorAll("#catalog .qitems").forEach(box=>{
+    [...box.querySelectorAll(".citem")].sort((x,y)=>compareItems(x.dataset,y.dataset,sort)).forEach(el=>box.appendChild(el));
+  });
+  document.querySelectorAll("#isorts [data-isort]").forEach(b=>b.classList.toggle("on",b.dataset.isort===sort));
+}
+
 function catalogHTML(g){
   const all=g.catalog.flatMap(grp=>grp.items);
   const body=g.catalog.map((grp,gi)=>{
-    const items=grp.items.map(it=>{
+    const items=[...grp.items].sort((x,y)=>compareItems(itemSortAttrs(x),itemSortAttrs(y),"value")).map(it=>{
+      const sa=itemSortAttrs(it);
       const cls=it.w?ARMOR_CLASS[it.w]:"";
       const search=[it.n,it.a,it.p?it.p+"G":"",grp.t,it.u,cls].filter(Boolean).join(" ").toLowerCase();
       const meta=[it.u?`<span class="cuser">${esc(it.u)}</span>`:"",cls?`<span class="cuser">${cls}</span>`:"",it.p?`<span class="cprice">${it.p}G</span>`:"",it.a?esc(it.a):""].filter(Boolean).join(" · ");
-      return `<div class="citem" data-search="${esc(search)}" data-igroup="${esc(grp.t)}"${it.u?` data-iuser="${esc(it.u)}"`:""}${it.w?` data-iclass="${it.w}"`:""}><span class="cname">${esc(it.n)}<i class="qbadge v cneed">需技能</i></span><span class="cmeta">${meta}</span></div>`;
+      return `<div class="citem" data-search="${esc(search)}" data-igroup="${esc(grp.t)}" data-ivalue="${sa.ivalue}" data-iprice="${sa.iprice}" data-iname="${esc(sa.iname)}" data-iarea="${esc(sa.iarea)}"${it.u?` data-iuser="${esc(it.u)}"`:""}${it.w?` data-iclass="${it.w}"`:""}><span class="cname">${esc(it.n)}<i class="qbadge v cneed">需技能</i></span><span class="cmeta">${meta}</span></div>`;
     }).join("");
     return `<details class="qgroup" data-igroup="${esc(grp.t)}"><summary><span class="qarea">${esc(grp.t)}</span><span class="qcnt" data-icnt="${gi}">${grp.items.length} 件</span></summary><div class="qitems">${items}</div></details>`;
   }).join("");
@@ -195,6 +218,11 @@ function catalogHTML(g){
     <button class="qchip sep" data-iexpand="1">展开全部</button>
     <button class="qchip" data-iexpand="0">收起全部</button>
   </div>
+  <div class="qchips" id="isorts">
+    <button class="qchip on" data-isort="value">按数值</button>
+    <button class="qchip" data-isort="price">按价格</button>
+    <button class="qchip" data-isort="name">按名称</button>
+  </div>
   ${g.catalogUsers?`<div class="qchips" id="iusers">
     <button class="qchip on" data-iuser="">全部角色</button>
     ${g.catalogUsers.map(u=>`<button class="qchip" data-iuser="${esc(u.n)}">${esc(u.n)}</button>`).join("")}
@@ -205,7 +233,7 @@ function catalogHTML(g){
   </div>
   <p class="qfoot" id="iusernote" hidden></p>`:""}
   <div id="igroups">${body}</div>
-  <p class="qfoot">物品名为官方中文；[0]/[1]/[2] 是装备插槽数。基础数值只列攻击/防御，宝石、特性等细节以游戏内为准。${g.catalogUsers?"武器为角色专属。轻型防具全员可穿；中型只有修尔克、莱恩、卡尔娜、丹邦一开始就能穿，其他角色和重型防具都要靠技能或技能连接解锁；机界防具仅菲奥伦可穿。标「需技能」的条目是否已解锁、具体能否装备以游戏内为准。":""}</p>`;
+  <p class="qfoot">物品名为官方中文；[0]/[1]/[2] 是装备插槽数。默认按数值从高到低：武器看最大攻击，防具看物防加以太防，收藏品按区域与类别。基础数值只列攻击/防御，宝石、特性等细节以游戏内为准。${g.catalogUsers?"武器为角色专属。轻型防具全员可穿；中型只有修尔克、莱恩、卡尔娜、丹邦一开始就能穿，其他角色和重型防具都要靠技能或技能连接解锁；机界防具仅菲奥伦可穿。标「需技能」的条目是否已解锁、具体能否装备以游戏内为准。":""}</p>`;
 }
 
 function itemUserAllows(el,u){
@@ -264,6 +292,8 @@ function bindCatalogEvents(){
   root.addEventListener("click",e=>{
     const f=e.target.closest("[data-ifilter]");
     if(f){applyItemFilter(f.dataset.ifilter);return;}
+    const s=e.target.closest("[data-isort]");
+    if(s){applyItemSort(s.dataset.isort);return;}
     const u=e.target.closest("#iusers [data-iuser]");
     if(u){itemUser=u.dataset.iuser;applyItemFilter(itemFilter);return;}
     const c=e.target.closest("#iclasses [data-iclass]");
@@ -376,6 +406,7 @@ function build(){
   itemFilter="all";
   itemUser="";
   itemClass="";
+  itemSort="value";
   document.body.dataset.game=g.id;
   $("#qpwrap").classList.toggle("hidden",!g.quests);
   const mt=document.querySelector('meta[name="theme-color"]');
