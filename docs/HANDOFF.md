@@ -36,7 +36,7 @@
 - 章节字段：`{id, n, title, area, goal, steps[], items[], warn[], boss:{name,tip}, tip}`。`steps/goal/warn/boss.tip` 按 HTML 原样插入（可写 `<b>`），`items` 会被转义。
 - 主题字段：`theme:{"--bg":..., "--acc":..., ...}`。构建时从数据生成 `assets/themes.css`；新增游戏不要再改 `src/app.css` 或 `src/shell.html` 的主题块。
 - 任务字段：`quests:[{area, items:[{id, n, g, t, x, s, ns2, v, d, m, e, f, rw}]}]`。`t` 限时、`x` 二选一组（同组正好 2 条）、`s` 剧情、`ns2` NS2 新增、`v` 译名待核、`d` 期限、`m/e/f` 金钱/EXP/评价、`rw` 奖励道具数组。勾选存 `state.quests[游戏 id][任务 id]`；奖励显示在任务下方，并参与搜索。
-- 物品/技巧字段：`catalog:[{t, items:[{n, p, a}]}]`、`tips:[{t, a}]`。物品按类型分组，覆盖武器/防具/收藏品 1504 件；素材与关键物品在任务表和殖民地6 清单里。两者不参与进度键，不进 `progress.lock.json`。
+- 物品/技巧字段：`catalog:[{t, items:[{n, p, a, u, w}]}]`、`catalogUsers:[{n, armor, medium, mech}]`、`tips:[{t, a}]`。物品按类型分组，覆盖武器/防具/收藏品 1504 件；素材与关键物品在任务表和殖民地6 清单里。两者不参与进度键，不进 `progress.lock.json`。
 - 章节 `id`、收集项位置、任务 `id` 是进度持久化的键，规则见 `AGENTS.md`，现状记录在 `src/progress.lock.json`。
 - `build()` 每次切换游戏时整体重渲染；完成勾选只做局部更新（章节/任务进度条、TOC、计数、二选一锁定），不重绘页面，避免滚动位置跳动。
 - 搜索：每个可搜元素带 `data-search`，文本先 `.replace(/<[^>]+>/g," ")` 去掉标签再小写化；任务项还叠加「限时/二选一/未完成/已完成」筛选，搜索与筛选同时生效。

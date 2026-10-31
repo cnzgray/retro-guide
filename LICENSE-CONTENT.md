@@ -29,9 +29,9 @@
 | [なりきりダンジョンX まとめwiki](https://w.atwiki.jp/naridan-x/)（页 185–188） | 幻想传说 X 流程表、时限要素、术技数据 |
 | テイルズオブエターニア攻略はココ！（链接待补） | 永恒传说流程、时限要素 |
 | QiQoe（链接待补） | 永恒传说流程、时限要素 |
-| [蒙纳多研究本部（xenoblade.cn）](https://xenoblade.cn/) | 异度之刃 决定版任务、区域、Boss、殖民地6 复兴 |
+| [蒙纳多研究本部（xenoblade.cn）](https://xenoblade.cn/) | 异度之刃 决定版任务、区域、Boss、殖民地6 复兴、物品的装备角色与重量分类 |
 | [Game8《Xenoblade Chronicles: Definitive Edition》攻略](https://game8.co/games/Xenoblade-Chronicles-Definitive-Edition) | 异度之刃 决定版主线流程、Boss 机制 |
-| [Xenoblade Wiki（Fandom）](https://xenoblade.fandom.com/wiki/Quest_(XC1)) | 任务总数、限时/二选一分类 |
+| [Xenoblade Wiki（Fandom）](https://xenoblade.fandom.com/wiki/Quest_(XC1)) | 任务总数、限时/二选一分类、武器与防具的装备规则 |
 
 上述站点的原文版权归各自作者所有，本项目仅作事实性整理与再表述。
 

@@ -85,6 +85,13 @@
   .next b{color:var(--acc)}
   .next .k{font-size:11.5px;color:#6d7989;letter-spacing:.1em}
 
+  .ptabs{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;margin:0 0 18px;padding:8px 0;background:var(--bg);scrollbar-width:none}
+  .ptabs::-webkit-scrollbar{display:none}
+  .ptab{flex:none;font:inherit;font-size:13.5px;padding:7px 13px;border-radius:10px;cursor:pointer;color:#94a1b2;background:#121820;border:1px solid var(--line)}
+  .ptab:hover{border-color:var(--focus);color:#e7ecf3}
+  .ptab.on{color:var(--acc);border-color:var(--a45);background:var(--a10)}
+  .qitem,.chapter,[id]{scroll-margin-top:60px}
+
   h2.sec{font-size:13px;letter-spacing:.16em;color:#6d7989;text-transform:uppercase;margin:38px 0 14px;display:flex;align-items:center;gap:10px}
   h2.sec::after{content:"";flex:1;height:1px;background:var(--line)}
 
@@ -198,15 +205,20 @@
   .qfoot .star{color:var(--acc2)}
 
   /* ---------- tips & item catalog ---------- */
-  .tipgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin-bottom:12px}
-  .tipcard{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:12px 14px}
-  .tipcard h4{margin:0 0 6px;font-size:13.5px;color:var(--acc)}
-  .tipcard p{margin:0;font-size:13.5px;color:#b9c5d3;line-height:1.65}
+  .tipgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px;margin-bottom:12px;align-items:start}
+  .tipcard{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:10px 14px}
+  .tipcard summary{list-style:none;cursor:pointer}
+  .tipcard summary::-webkit-details-marker{display:none}
+  .tipcard h4{margin:0;font-size:13.5px;color:var(--acc)}
+  .tipcard p{margin:6px 0 0;font-size:13.5px;color:#b9c5d3;line-height:1.65}
   .citem{display:flex;gap:10px;align-items:flex-start;padding:7px 9px;border-radius:8px;font-size:13.5px;color:#c6d1de}
   .citem:hover{background:#181e26}
   .citem .cname{flex:1;min-width:0;line-height:1.45}
   .citem .cmeta{flex:none;max-width:55%;text-align:right;font-size:11.5px;color:#6d7989;line-height:1.5}
   .citem .cprice{color:var(--acc2)}
+  .citem .cuser{color:#a9bdd2}
+  .citem .cneed{display:none;margin-left:6px}
+  .citem.need .cneed{display:inline}
   @media (max-width:600px){
     .citem{flex-wrap:wrap}
     .citem .cmeta{max-width:none;text-align:left}
@@ -233,6 +245,7 @@
     .toc{display:none}
     .railfoot{display:none}
     .main{padding:22px 16px 80px;max-width:none}
+    .ptab{padding:6px 10px;font-size:13px}
     .sitefoot{grid-column:1;padding:16px 16px 26px}
     .hero h1{font-size:24px}
     .bossrow{grid-template-columns:1fr;gap:4px}

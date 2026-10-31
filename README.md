@@ -121,7 +121,8 @@ GAMES[]                     游戏
 ├─ unverified[]             可选，存疑事项，不渲染，`--verbose` 列出
 ├─ chapters[]               章节：{id, n, title, area, goal, steps[], items[], warn[], boss:{name,tip}, tip}
 ├─ quests[]                 全任务：{area, items:[{id, n, g, t, x, s, ns2, v, d, m, e, f, rw[]}]}
-├─ catalog[]                全物品：{t, items:[{n, p, a}]}；武器/防具/收藏品
+├─ catalog[]                全物品：{t, items:[{n, p, a, u, w}]}；武器/防具/收藏品
+├─ catalogUsers[]           物品角色筛选：{n, armor, medium, mech}
 ├─ tips[]                   小技巧：{t, a}
 ├─ qa[]                     卡关急救：{q, a}
 ├─ checks[]                 收集清单分组：{t, items[]}
@@ -130,7 +131,7 @@ GAMES[]                     游戏
 
 - 章节 `id` 是进度持久化的键，**改名会丢掉用户已勾的进度**；id 与显示顺序无关，顺序由 `n` 决定。
 - `quests` 的 `id` 是任务进度的键，只增不删；`t` 标限时，`x` 是二选一组（同组必须正好 2 条），`s` 标剧情，`ns2` 标 NS2 新增，`v` 标译名待核，`d` 是期限文案，`m/e/f` 是金钱/EXP/评价，`rw` 是奖励道具数组。限时任务必须有 `d`（或所在组有 `d`）。
-- `catalog` 按物品类型分组：`n` 名称、`p` 价格、`a` 基础数值或收藏品区域/类别。当前覆盖武器/防具/收藏品 1504 件；素材和关键物品没有独立物品页，散落在任务报酬与殖民地6 清单里。`tips` 是 `{t, a}` 小技巧卡片。
+- `catalog` 按物品类型分组：`n` 名称、`p` 价格、`a` 基础数值或收藏品区域/类别、`u` 武器专属角色、`w` 防具重量（轻/中/重/机）。`catalogUsers[]` 定义角色筛选：`n` 角色名，`armor` 防具规则已核实，`medium` 中型免技能，`mech` 可穿机界防具。当前覆盖武器/防具/收藏品 1504 件；素材和关键物品没有独立物品页，散落在任务报酬与殖民地6 清单里。`tips` 是 `{t, a}` 小技巧卡片。
 - `steps / goal / warn / boss.tip / qa.a / bosses.t` 按 HTML 原样插入（可写 `<b>`）；`title / area / items`、收集项、任务名/委托人/期限、`boss.name` 等会被转义，不能写标签。
 - 主题变量写在 `theme` 对象里；构建时默认游戏生成 `:root`，其余生成 `body[data-game="<id>"]` 到 `assets/themes.css`。标签圆点色直接取 `theme["--acc"]`，不再单独维护 `accent`。
 - `build()` 每次切换游戏整体重渲染；勾选章节/任务/收集项只做局部更新，不重绘整页，避免滚动位置跳动。

@@ -161,9 +161,15 @@ function validate(name, g, problems) {
           if (!isStr(it.n)) bad(`${iat} 需要 n`);
           if (it.p !== undefined && !(Number.isInteger(it.p) && it.p >= 0)) bad(`${iat}.p 必须是非负整数`);
           if (it.a !== undefined && !isStr(it.a)) bad(`${iat}.a 必须是字符串`);
+          if (it.u !== undefined && !isStr(it.u)) bad(`${iat}.u 必须是字符串`);
+          if (it.w !== undefined && !["轻", "中", "重", "机"].includes(it.w)) bad(`${iat}.w 必须是 轻/中/重/机`);
         });
       });
     }
+  }
+
+  if (g.catalogUsers !== undefined) {
+    if (!Array.isArray(g.catalogUsers) || !g.catalogUsers.every((u) => isStr(u?.n))) bad("catalogUsers 每项需要 n");
   }
 
   if (g.tips !== undefined) {
@@ -175,7 +181,7 @@ function validate(name, g, problems) {
   const plain = [g.title, g.short, g.tabs, ...g.chapters.flatMap((c) => [c.title, c.area, ...(c.items || [])]),
     ...g.checks.flatMap((c) => [c.t, ...(c.items || [])]), ...g.qa.map((q) => q.q), ...g.bosses.flatMap((b) => [b.n, b.s]),
     ...(g.quests || []).flatMap((grp) => [grp.area, ...grp.items.flatMap((it) => [it.n, ...(it.g ? [it.g] : []), ...(it.d ? [it.d] : []), ...(it.rw || [])])]),
-    ...(g.catalog || []).flatMap((grp) => [grp.t, ...grp.items.flatMap((it) => [it.n, ...(it.a ? [it.a] : [])])]),
+    ...(g.catalog || []).flatMap((grp) => [grp.t, ...grp.items.flatMap((it) => [it.n, ...(it.a ? [it.a] : []), ...(it.u ? [it.u] : [])])]),
     ...(g.tips || []).map((t) => t.t)];
   plain.forEach((text) => { if (/<\/?[a-z]/i.test(text)) bad(`转义字段不能写 HTML 标签：${text}`); });
 

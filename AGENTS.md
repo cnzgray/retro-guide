@@ -14,7 +14,7 @@
 3. 时限要素（过了就没的事件）写进 `warn[]`，渲染成黄色 `.warn`；异度之刃的任务期限写进任务的 `d`，渲染成「期限：…」。这是本页核心价值，别降级成普通步骤。
 4. 主题色只动数据里的 `theme` 对象：构建生成 `assets/themes.css`，默认游戏写 `:root`，其余写 `body[data-game="<id>"]`；不要回 `src/app.css` 加逐作主题块，也不要再维护 `accent`。新增游戏时，数据文件、`theme`、译名表、页脚和 `LICENSE-CONTENT.md` 的署名都要补，缺了 `--check` 会红。
 5. 异度之刃的任务表在 `quests[]`：`t` 限时、`x` 二选一组（同组正好 2 条）、`s` 剧情、`ns2` NS2 新增、`v` 译名待核、`d` 期限、`m/e/f` 金钱/EXP/评价、`rw` 奖励道具数组。限时任务必须有 `d`；勾一条二选一会自动锁另一条。奖励显示在每条任务下方，并参与搜索。
-6. 异度之刃的物品表在 `catalog[]`（`t` 类型、`items:[{n,p,a}]`），小技巧在 `tips[]`（`{t,a}`）。物品与技巧不参与进度键，不进 `progress.lock.json`；改完跑构建和 `--check` 即可。
+6. 异度之刃的物品表在 `catalog[]`（`t` 类型、`items:[{n,p,a,u,w}]`；`u` 武器专属角色、`w` 防具重量 轻/中/重/机，角色筛选按钮与能力规则在 `catalogUsers[]`），小技巧在 `tips[]`（`{t,a}`）。物品与技巧不参与进度键，不进 `progress.lock.json`；改完跑构建和 `--check` 即可。
 7. `node tools/build.mjs` 生成 `index.html` + `assets/` + `games/`，源码与产物一起提交。
 
 完成标准：`node tools/build.mjs --check` 与 `node --test tests/build.test.mjs` 都退出 0；起 `python3 -m http.server 8765` 后确认各作章节数与 `src/progress.lock.json` 一致、异度之刃任务表 481 条 / 17 区域 / 130 限时 / 25 组二选一、全物品 1504 件 / 7 类、小技巧 18 张、搜中文名/物品名命中、勾选后刷新仍保留、二选一锁定生效、切换后 `--acc` 正确、窄屏（≤420px）无横向溢出、页脚在各作下都可见；再把 `index.html` + `assets/` + `games/` 拷到别处，用 `file://` 打开确认能正常加载。
