@@ -191,3 +191,15 @@ test("--rename 同步进度快照", (t) => {
 test("catalogMeta 的筛选必须对应分组", (t) => {
   assertFails(t, "src/games/pokopia.js", (s) => s.replace('"海底栖息地"', '"不存在的分组"'), /catalogMeta\.filters 没有对应分组/);
 });
+
+test("itemsMeta 的筛选必须对应物品分组", (t) => {
+  assertFails(t, "src/games/pokopia.js", (s) => s.replace('"filters": [\n   "材料",', '"filters": [\n   "不存在的分组",'), /itemsMeta\.filters 没有对应分组/);
+});
+
+test("物品喜好标签必须是字符串数组", (t) => {
+  assertFails(t, "src/games/pokopia.js", (s) => s.replace('"l": ["自然气息","柔软","集体活动","可爱","水"]', '"l": "自然气息"'), /\.l 必须是字符串数组/);
+});
+
+test("items 条目缺名称时报错", (t) => {
+  assertFails(t, "src/games/pokopia.js", (s) => s.replace('"n": "Honey",', '"nm": "Honey",'), /items\[0\]\.items\[0\] 需要 n/);
+});

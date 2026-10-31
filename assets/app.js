@@ -24,6 +24,7 @@ let itemFilter="all";
 let itemUser="";
 let itemClass="";
 let itemSort="value";
+let itemsFilter="all";
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 
 const $=(s,r=document)=>r.querySelector(s);
@@ -36,7 +37,7 @@ const questList=()=>state.quests[gid()]||(state.quests[gid()]={});
 const isQuestDone=id=>!!questList()[String(id)];
 const ARMOR_CLASS={"轻":"轻型","中":"中型","重":"重型","机":"机界"};
 function panels(g){
-  return [["flow","流程"],...(g.quests?[["quests","任务"]]:[]),["help",g.tips?"急救与技巧":"急救"],...(g.catalog?[["catalog",g.catalogMeta?.tab||"物品"]]:[]),["collect","收集"],["boss",g.bossMeta?.tab||"Boss"]];
+  return [["flow","流程"],...(g.quests?[["quests","任务"]]:[]),["help",g.tips?"急救与技巧":"急救"],...(g.catalog?[["catalog",g.catalogMeta?.tab||"物品"]]:[]),...(g.items?[["items",g.itemsMeta?.tab||"物品"]]:[]),["collect","收集"],["boss",g.bossMeta?.tab||"Boss"]];
 }
 function showPanel(id,remember=true){
   const g=game();
@@ -55,6 +56,14 @@ function renderTabs(){
     `<button class="gtab ${g.id===state.game?"on":""}" data-g="${g.id}" style="--dot:${g.theme["--acc"]}"><b>${esc(g.short)}</b><span>${esc(g.tabs)}</span></button>`
   ).join("");
   $("#gtabs").querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{state.game=b.dataset.g;save();build();window.scrollTo({top:0});});
+  const on=$("#gtabs .gtab.on");
+  if(on){
+    const strip=$("#gtabs");
+    if(strip.scrollWidth>strip.clientWidth+1){
+      const a=on.getBoundingClientRect(),s=strip.getBoundingClientRect();
+      strip.scrollLeft+=(a.left-s.left)-(s.width-a.width)/2;
+    }
+  }
 }
 
 function renderToc(){
@@ -66,6 +75,7 @@ function renderToc(){
     <a href="#help" data-go="help">卡关急救</a>
     ${g.tips?`<a href="#tips" data-go="tips">小技巧</a>`:""}
     ${g.catalog?`<a href="#catalog" data-go="catalog">${esc(g.catalogMeta?.title||"全物品")}</a>`:""}
+    ${g.items?`<a href="#items" data-go="items">${esc(g.itemsMeta?.title||"物品出处")}</a>`:""}
     <a href="#collect" data-go="collect">收集清单</a>
     <a href="#boss" data-go="boss">${esc(g.bossMeta?.title||"Boss 速查")}</a>
     <div class="tgroup">章节</div>`;
@@ -194,6 +204,16 @@ function applyItemSort(sort){
   document.querySelectorAll("#isorts [data-isort]").forEach(b=>b.classList.toggle("on",b.dataset.isort===sort));
 }
 
+function favTags(it,g){
+  return (it.l||[]).map(x=>{
+    const en=g.itemsMeta?.favMap?.[x];
+    return `<span class="ctag"${en?` title="${esc(en)}"`:""}>${esc(x)}</span>`;
+  }).join("");
+}
+function favSearch(it,g){
+  return (it.l||[]).flatMap(x=>[x,g.itemsMeta?.favMap?.[x]||""]);
+}
+
 function catalogHTML(g){
   const meta=g.catalogMeta;
   const unit=meta?.unit||"件";
@@ -202,8 +222,8 @@ function catalogHTML(g){
     const items=(meta?grp.items:[...grp.items].sort((x,y)=>compareItems(itemSortAttrs(x),itemSortAttrs(y),"value"))).map(it=>{
       const sa=itemSortAttrs(it);
       const cls=it.w?ARMOR_CLASS[it.w]:"";
-      const search=[it.n,it.a,it.p?it.p+"G":"",grp.t,it.u,cls].filter(Boolean).join(" ").toLowerCase();
-      const meta=[it.u?`<span class="cuser">${esc(it.u)}</span>`:"",cls?`<span class="cuser">${cls}</span>`:"",it.p?`<span class="cprice">${it.p}G</span>`:"",it.a?esc(it.a):""].filter(Boolean).join(" · ");
+      const search=[it.n,it.a,it.p?it.p+"G":"",grp.t,it.u,cls,...favSearch(it,g)].filter(Boolean).join(" ").toLowerCase();
+      const meta=[it.u?`<span class="cuser">${esc(it.u)}</span>`:"",cls?`<span class="cuser">${cls}</span>`:"",it.p?`<span class="cprice">${it.p}G</span>`:"",it.a?esc(it.a):"",favTags(it,g)].filter(Boolean).join(" · ");
       return `<div class="citem" data-search="${esc(search)}" data-igroup="${esc(grp.t)}" data-ivalue="${sa.ivalue}" data-iprice="${sa.iprice}" data-iname="${esc(sa.iname)}" data-iarea="${esc(sa.iarea)}"${it.u?` data-iuser="${esc(it.u)}"`:""}${it.w?` data-iclass="${it.w}"`:""}><span class="cname">${esc(it.n)}<i class="qbadge v cneed">需技能</i></span><span class="cmeta">${meta}</span></div>`;
     }).join("");
     return `<details class="qgroup" data-igroup="${esc(grp.t)}"><summary><span class="qarea">${esc(grp.t)}</span><span class="qcnt" data-icnt="${gi}">${grp.items.length} ${esc(unit)}</span></summary><div class="qitems">${items}</div></details>`;
@@ -234,6 +254,32 @@ function catalogHTML(g){
   <p class="qfoot" id="iusernote" hidden></p>`:""}
   <div id="igroups">${body}</div>
   <p class="qfoot">${meta?.foot||""}${meta?"":"物品名为官方中文；[0]/[1]/[2] 是装备插槽数。默认按数值从高到低：武器看最大攻击，防具看物防加以太防，收藏品按区域与类别。基础数值只列攻击/防御，宝珠、特性等细节以游戏内为准。"}${g.catalogUsers?"武器为角色专属。轻型防具全员可穿；中型只有修尔克、莱恩、卡露娜、丹邦一开始就能穿，其他角色和重型防具都要靠技能或技能连接解锁；机界防具仅菲奥伦可穿。标「需技能」的条目是否已解锁、具体能否装备以游戏内为准。":""}</p>`;
+}
+
+function itemsHTML(g){
+  const meta=g.itemsMeta||{};
+  const unit=meta.unit||"件";
+  const all=g.items.flatMap(grp=>grp.items);
+  const body=g.items.map((grp,gi)=>{
+    const items=grp.items.map(it=>{
+      const tags=favTags(it,g);
+      const search=[it.n,it.a,grp.t,...favSearch(it,g)].filter(Boolean).join(" ").toLowerCase();
+      return `<div class="citem" data-search="${esc(search)}" data-igroup="${esc(grp.t)}"><span class="cname">${esc(it.n)}</span><span class="cmeta">${it.a?esc(it.a):""}${tags?`<span class="ctags">${tags}</span>`:""}</span></div>`;
+    }).join("");
+    return `<details class="qgroup" data-igroup="${esc(grp.t)}"><summary><span class="qarea">${esc(grp.t)}</span><span class="qcnt">${grp.items.length} ${esc(unit)}</span></summary><div class="qitems">${items}</div></details>`;
+  }).join("");
+  return `<div class="qhead">
+    <div class="qstats"><b>${all.length}</b><span>${esc(meta.stat||"件物品")}</span><span class="qmax">按类型折叠</span></div>
+    <div class="qnote">${meta.note||""}</div>
+  </div>
+  <div class="qchips" id="ifilters2">
+    <button class="qchip on" data-xfilter="all">全部</button>
+    ${(meta.filters||[]).map(f=>`<button class="qchip" data-xfilter="${esc(f)}">${esc(f)}</button>`).join("")}
+    <button class="qchip sep" data-xexpand="1">展开全部</button>
+    <button class="qchip" data-xexpand="0">收起全部</button>
+  </div>
+  <div id="xgroups">${body}</div>
+  <p class="qfoot">${meta.foot||""}</p>`;
 }
 
 function itemUserAllows(el,u){
@@ -302,6 +348,42 @@ function bindCatalogEvents(){
     const x=e.target.closest("[data-iexpand]");
     if(x){
       const open=x.dataset.iexpand==="1";
+      root.querySelectorAll("details.qgroup").forEach(d=>{if(!d.classList.contains("hidden"))d.open=open;});
+    }
+  });
+}
+
+function applyItemsFilter(filter){
+  const root=$("#items"); if(!root)return;
+  itemsFilter=filter||"all";
+  const q=($("#search").value||"").trim().toLowerCase();
+  document.querySelectorAll("#items .citem").forEach(el=>{
+    let ok=itemsFilter==="all"||el.dataset.igroup===itemsFilter;
+    if(ok&&q)ok=el.dataset.search.includes(q);
+    el.classList.toggle("hidden",!ok);
+  });
+  const narrowed=q||itemsFilter!=="all";
+  document.querySelectorAll("#items details.qgroup").forEach(d=>{
+    const any=[...d.querySelectorAll(".citem")].some(el=>!el.classList.contains("hidden"));
+    d.classList.toggle("hidden",!any);
+    if(narrowed&&any)d.open=true;
+  });
+  const any=document.querySelectorAll("#items .citem:not(.hidden)").length;
+  let nr=document.getElementById("inores");
+  if(!any&&narrowed){
+    if(!nr){nr=document.createElement("div");nr.id="inores";nr.className="nores";nr.textContent="没有匹配的条目";$("#xgroups").appendChild(nr);}
+  }else if(nr)nr.remove();
+  document.querySelectorAll("#ifilters2 [data-xfilter]").forEach(b=>b.classList.toggle("on",b.dataset.xfilter===itemsFilter));
+}
+
+function bindItemsEvents(){
+  const root=$("#items"); if(!root)return;
+  root.addEventListener("click",e=>{
+    const f=e.target.closest("[data-xfilter]");
+    if(f){applyItemsFilter(f.dataset.xfilter);return;}
+    const x=e.target.closest("[data-xexpand]");
+    if(x){
+      const open=x.dataset.xexpand==="1";
       root.querySelectorAll("details.qgroup").forEach(d=>{if(!d.classList.contains("hidden"))d.open=open;});
     }
   });
@@ -443,6 +525,7 @@ function build(){
   ${g.tips?`<section id="tips"><h2 class="sec">小技巧</h2>${tipsHTML(g)}</section>`:""}
   </div>
   ${g.catalog?`<section id="catalog" data-panel="catalog"><h2 class="sec">${esc(g.catalogMeta?.title||"全物品")}</h2>${catalogHTML(g)}</section>`:""}
+  ${g.items?`<section id="items" data-panel="items"><h2 class="sec">${esc(g.itemsMeta?.title||"物品出处")}</h2>${itemsHTML(g)}</section>`:""}
 
   <div data-panel="collect">
   <h2 class="sec" id="collect">收集清单</h2>
@@ -498,6 +581,7 @@ function build(){
   updateCounts();
   bindQuestEvents();
   bindCatalogEvents();
+  bindItemsEvents();
   renderQuestProgress();
   updateQuestCounts();
   applySearch($("#search").value);
@@ -527,7 +611,7 @@ function applySearch(q){
   const nodes=document.querySelectorAll("[data-search]");
   let hits=0;
   nodes.forEach(n=>{
-    if(n.closest("#quests")||n.closest("#catalog"))return;
+    if(n.closest("#quests")||n.closest("#catalog")||n.closest("#items"))return;
     const ok=!q||n.dataset.search.includes(q);
     n.classList.toggle("hidden",!ok);
     if(ok&&q)hits++;
@@ -543,8 +627,10 @@ function applySearch(q){
   });
   applyQuestFilter(questFilter);
   applyItemFilter(itemFilter);
+  applyItemsFilter(itemsFilter);
   const qhits=document.querySelectorAll("#quests .qitem:not(.hidden)").length;
   const ihits=document.querySelectorAll("#catalog .citem:not(.hidden)").length;
+  const xhits=document.querySelectorAll("#items .citem:not(.hidden)").length;
   document.querySelectorAll("details.qa,details.tipcard").forEach(d=>{d.open=!!q&&!d.classList.contains("hidden");});
   document.querySelectorAll("#main [data-panel]").forEach(p=>{
     if(q)p.classList.toggle("hidden",!p.querySelector("[data-search]:not(.hidden)"));
@@ -554,7 +640,7 @@ function applySearch(q){
     if(q)b.classList.toggle("on",!!document.querySelector(`#main [data-panel="${b.dataset.view}"]:not(.hidden)`));
   });
   let nr=$("#nores");
-  if(q&&!hits&&!qhits&&!ihits){
+  if(q&&!hits&&!qhits&&!ihits&&!xhits){
     if(!nr){nr=document.createElement("div");nr.id="nores";nr.className="nores";nr.textContent="没有匹配，换个词试试";$("#main").appendChild(nr);}
   }else if(nr){nr.remove();}
 }

@@ -6,6 +6,7 @@
 //   node tools/build.mjs --lock       确认进度键变更，更新 src/progress.lock.json（章节/任务 id 只增不删）
 //   node tools/build.mjs --verbose    额外打印译名覆盖率与存疑清单
 import { existsSync, readFileSync, writeFileSync, readdirSync, mkdirSync, unlinkSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { basename, join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import vm from "node:vm";
@@ -163,6 +164,7 @@ function validate(name, g, problems) {
           if (it.a !== undefined && !isStr(it.a)) bad(`${iat}.a 必须是字符串`);
           if (it.u !== undefined && !isStr(it.u)) bad(`${iat}.u 必须是字符串`);
           if (it.w !== undefined && !["轻", "中", "重", "机"].includes(it.w)) bad(`${iat}.w 必须是 轻/中/重/机`);
+          if (it.l !== undefined && !isStrArr(it.l)) bad(`${iat}.l 必须是字符串数组`);
         });
       });
     }
@@ -179,6 +181,37 @@ function validate(name, g, problems) {
     else for (const f of g.catalogMeta.filters) if (!(g.catalog || []).some((grp) => grp.t === f)) bad(`catalogMeta.filters 没有对应分组：${f}`);
   }
 
+  if (g.items !== undefined) {
+    if (!Array.isArray(g.items) || !g.items.length) bad("items 必须是非空数组");
+    else {
+      const types = new Set();
+      g.items.forEach((grp, gi) => {
+        const at = `items[${gi}]`;
+        if (!isStr(grp.t)) bad(`${at} 需要 t`);
+        else if (types.has(grp.t)) bad(`${at} 类型重复 —— ${grp.t}`);
+        else types.add(grp.t);
+        if (!Array.isArray(grp.items) || !grp.items.length) return bad(`${at} 需要非空 items`);
+        grp.items.forEach((it, ii) => {
+          const iat = `${at}.items[${ii}]`;
+          if (!isStr(it.n)) bad(`${iat} 需要 n`);
+          if (it.a !== undefined && !isStr(it.a)) bad(`${iat}.a 必须是字符串`);
+          if (it.l !== undefined && !isStrArr(it.l)) bad(`${iat}.l 必须是字符串数组`);
+        });
+      });
+    }
+  }
+
+  if (g.itemsMeta !== undefined) {
+    if (!g.items) bad("itemsMeta 需要配合 items");
+    for (const k of ["title", "tab", "unit", "stat", "note", "foot"]) if (!isStr(g.itemsMeta?.[k])) bad(`itemsMeta 需要 ${k}`);
+    if (!isStrArr(g.itemsMeta?.filters) || !g.itemsMeta.filters.length) bad("itemsMeta.filters 必须是非空字符串数组");
+    else for (const f of g.itemsMeta.filters) if (!(g.items || []).some((grp) => grp.t === f)) bad(`itemsMeta.filters 没有对应分组：${f}`);
+    if (g.itemsMeta.favMap !== undefined) {
+      if (!g.itemsMeta.favMap || typeof g.itemsMeta.favMap !== "object" || Array.isArray(g.itemsMeta.favMap)) bad("itemsMeta.favMap 必须是对象");
+      else for (const [k, v] of Object.entries(g.itemsMeta.favMap)) if (!isStr(k) || !isStr(v)) bad(`itemsMeta.favMap 的键和值都必须是字符串：${k}`);
+    }
+  }
+
   if (g.bossMeta !== undefined) {
     for (const k of ["title", "tab"]) if (!isStr(g.bossMeta?.[k])) bad(`bossMeta 需要 ${k}`);
   }
@@ -193,6 +226,8 @@ function validate(name, g, problems) {
     ...g.checks.flatMap((c) => [c.t, ...(c.items || [])]), ...g.qa.map((q) => q.q), ...g.bosses.flatMap((b) => [b.n, b.s]),
     ...(g.quests || []).flatMap((grp) => [grp.area, ...grp.items.flatMap((it) => [it.n, ...(it.g ? [it.g] : []), ...(it.d ? [it.d] : []), ...(it.rw || [])])]),
     ...(g.catalog || []).flatMap((grp) => [grp.t, ...grp.items.flatMap((it) => [it.n, ...(it.a ? [it.a] : []), ...(it.u ? [it.u] : [])])]),
+    ...(g.items || []).flatMap((grp) => [grp.t, ...grp.items.flatMap((it) => [it.n, ...(it.a ? [it.a] : []), ...(it.l || [])])]),
+    ...(g.itemsMeta ? [g.itemsMeta.title, g.itemsMeta.tab, g.itemsMeta.unit, g.itemsMeta.stat, ...(g.itemsMeta.filters || []), ...Object.entries(g.itemsMeta.favMap || {}).flat()] : []),
     ...(g.tips || []).map((t) => t.t),
     ...(g.catalogMeta ? [g.catalogMeta.title, g.catalogMeta.tab, g.catalogMeta.unit, g.catalogMeta.stat, ...(g.catalogMeta.filters || [])] : []),
     ...(g.bossMeta ? [g.bossMeta.title, g.bossMeta.tab] : [])];
@@ -217,6 +252,11 @@ function themeCSS(games) {
   }
   return css;
 }
+
+// GitHub Pages 对静态资源发 max-age=600 且无法自定义头；URL 带内容指纹后，内容一变
+// 浏览器就当成新资源，普通刷新也能拿到，不会出现新 HTML 配旧脚本。
+const assetVersion = (content) => createHash("sha256").update(content).digest("hex").slice(0, 10);
+const versioned = (ref, content) => `${ref}?v=${assetVersion(content)}`;
 
 function shellIssues(shell) {
   const issues = [];
@@ -402,8 +442,15 @@ async function build() {
   }));
   const shell = readFileSync(SHELL, "utf8");
   if (!shell.includes(SCRIPTS_PLACEHOLDER)) throw new Error(`src/shell.html 缺少游戏脚本占位符 ${SCRIPTS_PLACEHOLDER}`);
-  const scriptTags = GAME_IDS.map((id) => `<script src="games/${id}.js"></script>`).join("\n");
-  const html = shell.replace(SCRIPTS_PLACEHOLDER, () => scriptTags);
+  const refs = [
+    ["assets/themes.css", themesCss],
+    ["assets/app.css", appCss],
+    ["assets/app.js", appJs],
+    ["games/index.js", gameIndexJs],
+  ];
+  const scriptTags = gameScripts.map(({ id, code }) => `<script src="${versioned(`games/${id}.js`, code)}"></script>`).join("\n");
+  let html = shell.replace(SCRIPTS_PLACEHOLDER, () => scriptTags);
+  for (const [ref, content] of refs) html = html.replaceAll(`"${ref}"`, `"${versioned(ref, content)}"`);
 
   parsed.forEach((g) => problems.push(...nameIssues(g.data.id, g.body, has("--verbose"))));
   problems.push(

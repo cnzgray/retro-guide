@@ -35,7 +35,7 @@
 | [Game8《Xenoblade Chronicles: Definitive Edition》攻略](https://game8.co/games/Xenoblade-Chronicles-Definitive-Edition) | 异度之刃 决定版主线流程、Boss 机制 |
 | [Game8《Tales of Eternia》攻略](https://game8.jp/toe/831842) | 永恒传说主线流程、Boss 弱点（重制版） |
 | [Xenoblade Wiki（Fandom）](https://xenoblade.fandom.com/wiki/Quest_(XC1)) | 任务总数、限时/二选一分类、武器与防具的装备规则 |
-| [Serebii.net《Pokémon Pokopia》资料库](https://www.serebii.net/pokemonpokopia/) | Pokopia 重要委托、入会挑战、技能、传说、活动档期、图鉴与栖息地 |
+| [Serebii.net《Pokémon Pokopia》资料库](https://www.serebii.net/pokemonpokopia/) | Pokopia 重要委托、入会挑战、技能、传说、活动档期、图鉴与栖息地、物品出处（[物品库](https://www.serebii.net/pokemonpokopia/items.shtml)）、喜好类别（[Favorites](https://www.serebii.net/pokemonpokopia/favorites.shtml)） |
 | [Game8《Pokémon Pokopia》攻略](https://game8.co/games/Pokemon-Pokopia/archives/583158) | Pokopia 分镇流程、Bubbly Basin 流程 |
 | [Nintendo Soup《Pokémon Pokopia》传说指南](https://nintendosoup.com/guide-how-to-befriend-all-legendary-pokemon-in-pokemon-pokopia) | Pokopia 传说宝可梦的交友条件 |
 | [Pokopia Wiki](https://www.pokopiawiki.com/guides/how-to-befriend-with-raikou-entei-and-suicune) | Pokopia Dream Island 前置与玩偶 |
