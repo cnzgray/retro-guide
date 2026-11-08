@@ -203,3 +203,35 @@ test("物品喜好标签必须是字符串数组", (t) => {
 test("items 条目缺名称时报错", (t) => {
   assertFails(t, "src/games/pokopia.js", (s) => s.replace('"n": "甜甜蜜",', '"nm": "甜甜蜜",'), /items\[0\]\.items\[0\] 需要 n/);
 });
+
+test("牵绊对话 id 重复", (t) => {
+  assertFails(t, XENOBLADE, (s) => s.replace('id:"b1"', 'id:"b2"'), /牵绊对话 id 重复/);
+});
+
+test("牵绊对话必须写两个角色", (t) => {
+  assertFails(t, XENOBLADE, (s) => s.replace('chars:["修尔克", "菲奥伦"]', 'chars:["修尔克"]'), /chars 必须是两个角色名/);
+});
+
+test("牵绊对话缺解锁章节", (t) => {
+  assertFails(t, XENOBLADE, (s) => s.replace(',unlock:"第１章 · ９号殖民地遭袭前"', ""), /需要 unlock/);
+});
+
+test("牵绊对话删除会被进度锁拦住", (t) => {
+  const { run, edit } = sandbox(t);
+  edit(XENOBLADE, (s) => s.replace(/^\s*\{id:"b1"[^\n]*\n/m, ""));
+  assert.match(run("--check").out, /牵绊对话 id b1 消失/);
+  const lock = run("--lock");
+  assert.equal(lock.code, 1, lock.out);
+});
+
+test("--rename 同步牵绊角色表", (t) => {
+  const { run, read } = sandbox(t);
+  assert.equal(run("--rename", "菲奥伦=菲奥娜", "--game", "xenoblade").code, 0);
+  assert.match(read("src/games/xenoblade.js"), /chars:\["修尔克","莱恩","菲奥娜"/);
+  assert.equal(run().code, 0);
+  assert.equal(run("--check").code, 0);
+});
+
+test("牵绊角色必须在筛选表里", (t) => {
+  assertFails(t, XENOBLADE, (s) => s.replace('chars:["修尔克", "菲奥伦"]', 'chars:["修尔克", "路人"]'), /不在 bondMeta\.chars 中/);
+});

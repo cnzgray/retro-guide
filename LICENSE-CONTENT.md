@@ -35,6 +35,11 @@
 | [Game8《Xenoblade Chronicles: Definitive Edition》攻略](https://game8.co/games/Xenoblade-Chronicles-Definitive-Edition) | 异度之刃 决定版主线流程、Boss 机制 |
 | [Game8《Tales of Eternia》攻略](https://game8.jp/toe/831842) | 永恒传说主线流程、Boss 弱点（重制版） |
 | [Xenoblade Wiki（Fandom）](https://xenoblade.fandom.com/wiki/Quest_(XC1)) | 任务总数、限时/二选一分类、武器与防具的装备规则 |
+| [天幻网 FFSKY《异度之刃》专题](https://xenoblade.ffsky.cn/kizunatalk.htm) | 牵绊对话清单、所在地、所需牵绊值、昼夜与对话选项 |
+| [Xeno Series Wiki《Heart-to-Heart (XC1)》](https://www.xenoserieswiki.org/wiki/Heart-to-Heart_(XC1)) | 牵绊对话角色、地点、开放章节与简体中文名 |
+| [iMore《Xenoblade Chronicles: Definitive Edition — Affinity Guide》](https://www.imore.com/xenoblade-chronicles-definitive-edition-affinity-guide) | 牵绊等级、战斗/任务/送礼的牵绊收益数值 |
+| [TheGamer《Best Gifts For Each Character》](https://www.thegamer.com/xenoblade-chronicles-definitive-edition-gift-guide/) | 各角色喜欢的收集品与送礼数值 |
+| [Gamer Guides《Heart-to-Hearts - Colony 6》](https://www.gamerguides.com/xenoblade-chronicles-definitive-edition/guide/affinity-chart/colony-6/heart-to-hearts) | 殖民地6 牵绊对话的复兴等级前置 |
 | [Serebii.net《Pokémon Pokopia》资料库](https://www.serebii.net/pokemonpokopia/) | Pokopia 重要委托、入会挑战、技能、传说、活动档期、图鉴与栖息地、物品出处（[物品库](https://www.serebii.net/pokemonpokopia/items.shtml)）、喜好类别（[Favorites](https://www.serebii.net/pokemonpokopia/favorites.shtml)） |
 | [Pokopia 攻略 Wiki（繁中）](https://pokopia.gamertw.com/zh-TW/item) | Pokopia 物品中文名、出处、商店/鉴定/交易等方式 |
 | [Game8《Pokémon Pokopia》攻略](https://game8.co/games/Pokemon-Pokopia/archives/583158) | Pokopia 分镇流程、Bubbly Basin 流程 |

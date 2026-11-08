@@ -12,7 +12,7 @@
 
 老游戏没有任务指引，网上攻略又散、又旧、图还全挂。所以这里交付的不是文章，而是一个**多文件、零外链、`file://` 直接打开**的速查页：`index.html` 只做骨架，`assets/` 放样式和渲染逻辑，`games/` 一作一个数据文件。章节卡折叠 + 进度勾选 + 卡关 Q&A + 收集清单 + Boss 速查 + 全站搜索，进度存本地。
 
-第四作是另一个量级：480 条任务、130 条限时、25 组二选一。页面为此加了「全任务」追踪：按区域列出每一条任务，标出时限与二选一，勾选后自动锁定另一分支；单周目最多 455 条（NS2 版 456 条）。
+第四作是另一个量级：480 条任务、130 条限时、25 组二选一，外加 63 条牵绊对话。页面为此加了「全任务」和「牵绊」两套追踪：任务按区域列，标出时限与二选一，勾选后自动锁定另一分支；牵绊对话按区域列，标出两名角色、牵绊等级、昼夜、开放章节和殖民地6 复兴限制。单周目最多完成 455 条任务（NS2 版 456 条），牵绊对话 63 条可在一周目全部看完。
 
 第五作的重点不同：几乎没有永久错过的内容，所以不追踪任务，而是做能搜的「图鉴速查」——宝可梦 → 栖息地 / 时间 / 天气，栖息地 → 配方 / 可遇对象；再补一张「物品出处」表（1710 件）和 43 类喜好标签：搜物品名看它从哪来，搜喜好类别看谁是同好。
 
@@ -48,7 +48,7 @@
 | **AI** | 写渲染逻辑与构建脚本、排版与文案初稿、把攻略事实逐条查证后回写、自己跑浏览器回归 |
 | **不 vibe 的部分** | 零外链、章节/任务 id 不改名、产物不手改——三条硬约束，人和 AI 都不能为了「顺手」推翻 |
 
-效果如何自己判：`node tools/build.mjs --check` 全绿，CI 拦漂移，产物合计约 700 KB 零依赖，单个游戏数据文件独立增长。
+效果如何自己判：`node tools/build.mjs --check` 全绿，CI 拦漂移，产物合计约 1 MB 零依赖，单个游戏数据文件独立增长。
 
 ## 文件
 
@@ -63,10 +63,10 @@
 | `src/shell.html` | 骨架源文件：只写 HTML 结构和资源引用，含 `<!-- __GAME_SCRIPTS__ -->` 占位符 |
 | `src/app.css` | 样式源文件 |
 | `src/app.js` | 渲染源文件；从 `window.RETRO_GAME_IDS` / `window.RETRO_GAMES` 读数据 |
-| `src/games/minish.js`、`topx.js`、`eternia.js`、`xenoblade.js`、`pokopia.js` | 攻略数据源文件，一个游戏一个文件，`export default { ... }`；主题在 `theme`，异度之刃任务表在 `quests` |
+| `src/games/minish.js`、`topx.js`、`eternia.js`、`xenoblade.js`、`pokopia.js` | 攻略数据源文件，一个游戏一个文件，`export default { ... }`；主题在 `theme`，异度之刃任务表在 `quests`，牵绊对话在 `bonds` |
 | `src/games/index.js` | 构建期游戏索引：`GAME_IDS` 数组列出所有游戏 id，数组顺序就是标签页顺序；新增文件不登记会被 `--check` 拦住 |
 | `src/names.js` | 译名单点：按游戏分表，日文原名 → 汉化译名 |
-| `src/progress.lock.json` | 进度键快照：章节 id、标题、`warn` 数、收集项顺序、任务 id/名称/限时/二选一组 |
+| `src/progress.lock.json` | 进度键快照：章节 id、标题、`warn` 数、收集项顺序、任务 id/名称/限时/二选一组、牵绊对话 id/名称 |
 | `tests/build.test.mjs` | 故障注入回归：确认 `--check` 真能拦住各类问题 |
 | `tools/build.mjs` | 零依赖 Node 脚本：生成 `index.html` + `assets/` + `games/`，校验、`--check`、`--rename`、`--lock` |
 | `.github/workflows/check.yml` | CI：产物与源码不一致就红；`main` 校验通过后部署 Pages |
@@ -88,9 +88,9 @@ node --test tests/build.test.mjs   # 故障注入回归
 node tools/build.mjs --verbose  # 附带打印译名提示与 unverified 存疑清单
 ```
 
-`--check` 拦这些问题：数据语法错误、字段缺失、标签未闭合、转义字段写了标签、章节 id 重复、译名不一致、主题变量或来源署名缺失、任务 id 重复、二选一组不是 2 条、限时任务没有期限、物品类型重复或物品字段缺失、小技巧字段缺失、游戏文件没进 `src/games/index.js`、骨架里有内联样式/脚本、外链、`app.js` 或游戏脚本语法错误、任一产物漂移、多余的游戏脚本，以及进度键变更。它只检查结构，不验证攻略事实，也不运行页面，发布前仍要走下面的回归清单。
+`--check` 拦这些问题：数据语法错误、字段缺失、标签未闭合、转义字段写了标签、章节 id 重复、译名不一致、主题变量或来源署名缺失、任务 id 重复、二选一组不是 2 条、限时任务没有期限、牵绊对话 id 重复或字段缺失、物品类型重复或物品字段缺失、小技巧字段缺失、游戏文件没进 `src/games/index.js`、骨架里有内联样式/脚本、外链、`app.js` 或游戏脚本语法错误、任一产物漂移、多余的游戏脚本，以及进度键变更。它只检查结构，不验证攻略事实，也不运行页面，发布前仍要走下面的回归清单。
 
-**进度键**：章节按 `id` 存进度，收集项按「组序号-项序号」存，任务按任务 `id` 存。章节 id 和任务 id 只增不删，`--lock` 也不接受删除；中途插章用新 id，只改 `n` 决定显示顺序。收集项只能追加到组尾。标题、`warn` 数、收集项、任务名/限时标记/二选一组变化会让 `--check` 失败，确认没有换内容、没有丢时限要素后跑 `--lock`。二选一组必须正好 2 条，任务表新增时也只能追加。
+**进度键**：章节按 `id` 存进度，收集项按「组序号-项序号」存，任务按任务 `id` 存，牵绊对话按牵绊 `id` 存。章节、任务和牵绊 id 只增不删，`--lock` 也不接受删除；中途插章用新 id，只改 `n` 决定显示顺序。收集项只能追加到组尾。标题、`warn` 数、收集项、任务名/限时标记/二选一组、牵绊名变化会让 `--check` 失败，确认没有换内容、没有丢时限要素后跑 `--lock`。二选一组必须正好 2 条，任务表新增时也只能追加。
 
 ## 使用
 
@@ -134,6 +134,8 @@ GAMES[]                     游戏
 ├─ unverified[]             可选，存疑事项，不渲染，`--verbose` 列出
 ├─ chapters[]               章节：{id, n, title, area, goal, steps[], items[], warn[], boss:{name,tip}, tip}
 ├─ quests[]                 全任务：{area, items:[{id, n, g, t, x, s, ns2, v, d, m, e, f, rw[]}]}
+├─ bonds[]                  全牵绊对话：{area, warn?, items:[{id, n, loc, chars[2], pts, night, unlock, req?, alt?}]}
+├─ bondMeta{}               牵绊区块文案：{title, tab, chars[], note, foot}
 ├─ catalog[]                全物品：{t, items:[{n, p, a, u, w, l}]}；武器/防具/收藏品
 ├─ catalogUsers[]           物品角色筛选：{n, armor, medium, mech}
 ├─ catalogMeta{}            可选，改写 catalog 的文案与筛选：{title, tab, unit, stat, note, foot, filters[]}
@@ -148,14 +150,15 @@ GAMES[]                     游戏
 
 - 章节 `id` 是进度持久化的键，**改名会丢掉用户已勾的进度**；id 与显示顺序无关，顺序由 `n` 决定。
 - `quests` 的 `id` 是任务进度的键，只增不删；`t` 标限时，`x` 是二选一组（同组必须正好 2 条），`s` 标剧情，`ns2` 标 NS2 新增，`v` 标译名待核，`d` 是期限文案，`m/e/f` 是金钱/EXP/评价，`rw` 是奖励道具数组。限时任务必须有 `d`（或所在组有 `d`）。
+- `bonds` 是异度之刃的牵绊对话表，按区域分组：`id` 是进度键，只增不删；`n` 名称、`loc` 具体地点、`chars` 两名角色、`pts` 所需牵绊值（500/1000/2000/3000/5000，渲染成黄/绿/青/紫/粉）、`night` 标仅夜间、`unlock` 开放章节/事件、`req` 额外的殖民地6 复兴条件、`alt` 另一版本说明。组上的 `warn` 是该区域的时限/封锁提醒。`bondMeta` 定义标题、页签、角色筛选表 `chars`、说明与脚注；`chars` 里必须有每条牵绊的两个人名，否则 `--check` 失败。牵绊进度存 `state.bonds`。
 - `catalog` 按物品类型分组：`n` 名称、`p` 价格、`a` 基础数值或收藏品区域/类别、`u` 武器专属角色、`w` 防具重量（轻/中/重/机）、`l` 可选标签数组（Pokopia 用来存喜好类别，渲染成小标签并参与搜索）。`catalogUsers[]` 定义角色筛选：`n` 角色名，`armor` 防具规则已核实，`medium` 中型免技能，`mech` 可穿机界防具。当前覆盖武器/防具/收藏品 1504 件；素材和关键物品没有独立物品页，散落在任务报酬与殖民地6 清单里。`tips` 是 `{t, a}` 小技巧卡片。
 - `items` 与 `itemsMeta` 是 Pokopia 的「物品出处」表：`items` 按类别分组，条目 `{n, a, en, l, p, w}`——`n` 中文名（暂无可靠简中名时等于英文原名并标「原名」）、`a` 出处（地点 + 获取方式）、`en` 英文原名（灰字显示、参与搜索）、`l` 喜好标签、`p` 地点标签（荒野/海边/山地/空岛/空空镇/云岛/海底/梦岛）、`w` 获取方式标签（野外/初始/宝藏/套组/制作/商店/交易/鉴定/3D 打印/电磁飘浮/宝可梦中心/任务/活动）。`itemsMeta` 定义标题、文案、类别筛选、地点/方式筛选与 `favMap`（喜好中文标签 → 英文原名）。`itemsMeta.filters` 必须对应 `items` 分组。物品与喜好不参与进度键。
 - `steps / goal / warn / boss.tip / qa.a / bosses.t` 按 HTML 原样插入（可写 `<b>`）；`title / area / items`、收集项、任务名/委托人/期限、`boss.name` 等会被转义，不能写标签。
 - 主题变量写在 `theme` 对象里；构建时默认游戏生成 `:root`，其余生成 `body[data-game="<id>"]` 到 `assets/themes.css`。标签圆点色直接取 `theme["--acc"]`，不再单独维护 `accent`。
 - `build()` 每次切换游戏整体重渲染；勾选章节/任务/收集项只做局部更新，不重绘整页，避免滚动位置跳动。
-- 搜索靠每个可搜元素的 `data-search`，文本先 `.replace(/<[^>]+>/g," ")` 去标签再小写化；任务项还会叠加「限时/二选一/未完成/已完成」筛选。
+- 搜索靠每个可搜元素的 `data-search`，文本先 `.replace(/<[^>]+>/g," ")` 去标签再小写化；任务项还会叠加「限时/二选一/未完成/已完成」筛选，牵绊项叠加「状态/角色/等级」筛选。
 - 流程正文会自动识别宝可梦、栖息地与物品名并生成 `.xref` 链接（关键词取自 `catalog` 与 `items`，最长匹配优先，不处理标题与 chips）；点击后切到「图鉴」或「物品」面板，把名称填进搜索框并展开命中项。同一名称只保留一个链接目标，图鉴优先于物品。
-- 进度存 `localStorage`，key `retroGuide.v1`：`{game, done:{<游戏 id>:[]}, checks:{...}, quests:{<游戏 id>:{<任务 id>:1}}}`，选中游戏也会记住。
+- 进度存 `localStorage`，key `retroGuide.v1`：`{game, done:{<游戏 id>:[]}, checks:{...}, quests:{<游戏 id>:{<任务 id>:1}}, bonds:{<游戏 id>:{<牵绊 id>:1}}}`，选中游戏也会记住。
 - 页脚 `footer.sitefoot` 是静态免责声明，不在 `build()` 的重渲染范围内，切换游戏不会丢。
 
 ## 设计约定（改之前先确认）
@@ -169,6 +172,7 @@ GAMES[]                     游戏
 7. **产物不手改**。`index.html`、`assets/`、`games/` 都是构建产物；改 `src/` 后跑 `node tools/build.mjs`，直接改产物会被 `--check` 判漂移，下一次构建覆盖掉。
 8. **译名只有一处定义**。`src/names.js` 按游戏分表，是需要与补丁核对的专名的事实源，道具等一次性名词直接写在正文；改译名用 `--rename --game`，别手工全局替换。
 9. **任务进度按任务 id 存**。`quests` 的 id 只增不删，新增任务只能追加；任务名、`t`、`x` 变化会让 `--check` 失败。二选一组必须正好 2 条，勾一条会自动锁另一条。
+10. **牵绊进度按牵绊 id 存**。`bonds` 的 id 也只增不删；改名会让 `--check` 失败，确认后跑 `--lock`。牵绊对话不参与任务统计，不要塞进 `quests`。
 
 ## 授权与免责
 
@@ -182,19 +186,20 @@ GAMES[]                     游戏
 回归检查清单：
 
 0. `node tools/build.mjs --check` 退出 0（`index.html`、`assets/`、`games/` 全部无漂移，无译名/结构问题）；
-1. 各作章节数与 `src/progress.lock.json` 一致；异度之刃任务表为 481 条 / 17 区域 / 130 限时 / 50 条二选一（25 组）；切换游戏无控制台报错；
-2. 搜索中文名（如「克雷斯」「恋爱成就」）能命中并展开对应章节/任务；
-3. 勾选章节 → 进度条 / 「现在该做」更新 → 刷新后仍保留；勾选任务 → 任务进度条更新 → 刷新后仍保留；
+1. 各作章节数与 `src/progress.lock.json` 一致；异度之刃任务表为 481 条 / 17 区域 / 130 限时 / 50 条二选一（25 组）；牵绊对话 63 条 / 15 区域 / 6 条仅夜间；切换游戏无控制台报错；
+2. 搜索中文名（如「克雷斯」「恋爱成就」「菲奥伦」「羁绊任务」）能命中并展开对应章节/任务/牵绊；
+3. 勾选章节 → 进度条 / 「现在该做」更新 → 刷新后仍保留；勾选任务/牵绊 → 对应进度条更新 → 刷新后仍保留；
 4. 切到缩小帽 `--acc` 为 `#56dd91`、`meta[theme-color]` 为 `#0c1310`；幻想传说 `#849cff` / `#0a0c15`；永恒传说 `#b48cff` / `#0b0a14`；异度之刃 `#5ad1ff` / `#071018`；
 5. 窄屏（≤420px）无横向溢出：`document.documentElement.scrollWidth <= window.innerWidth`；
 6. 页脚免责声明在各作下都可见，切换游戏不被 `build()` 清掉；
 7. 异度之刃「全任务」：限时筛选 130 条、二选一筛选 50 条、搜索与筛选叠加后仍正确；每条任务显示「奖励：…」，搜索道具名（如「游泳凉鞋」）能命中；勾选一条二选一后另一条变灰且不可勾，取消后恢复；
-8. 主题变量只存在于 `src/games/*.js` 的 `theme` 对象；`assets/themes.css` 由构建生成，仍能正常切换配色；
-9. 多文件：`index.html` 只引用 `assets/` 与 `games/`，没有内联样式/脚本；把三样一起拷到别处，`file://` 能打开并加载 481 条任务；删掉 `games/xenoblade.js` 后页面应缺少异度之刃数据（证明不是内嵌的）。
-10. 异度之刃「全物品」：1504 件 / 7 类型；防具筛选 883 件；搜「甜山葵」命中收藏品；「小技巧」18 张，搜「普攻自动」命中。
-11. 物品与技巧不进 `progress.lock.json`；改完跑 `node tools/build.mjs` 和 `--check` 即可，不需要 `--lock`。
-12. Pokopia「物品」：1710 件 / 12 类；默认显示中文名 + 英文灰字，337 件标「原名」；筛选「材料」60 件，叠加地点「空空镇」8 件、方式「商店」仍 8 件；搜「石头」与「Stone」都命中；搜「方块类」同时命中图鉴里的宝可梦和物品；悬停喜好标签显示英文原名；窄屏（≤420px）无横向溢出。
-13. 流程交叉链接：Pokopia 第 1 章点「杰尼龟」切到图鉴并搜到宝可梦条目，点「火堆」切到物品并展开；链接悬停有提示；幻想传说 / 缩小帽 / 永恒传说不出现误链（0 个）。
+8. 异度之刃「牵绊」：63 条 / 15 区域；「仅夜间」筛选 6 条、「菲奥伦」筛选 18 条、「粉」筛选 21 条；搜「菲奥伦」「羁绊任务」都命中；勾选后刷新仍保留；「下一个未完成」「展开全部」正常；殖民地6/皇都/监狱岛组头的黄框提示可见；
+9. 主题变量只存在于 `src/games/*.js` 的 `theme` 对象；`assets/themes.css` 由构建生成，仍能正常切换配色；
+10. 多文件：`index.html` 只引用 `assets/` 与 `games/`，没有内联样式/脚本；把三样一起拷到别处，`file://` 能打开并加载 481 条任务和 63 条牵绊；删掉 `games/xenoblade.js` 后页面应缺少异度之刃数据（证明不是内嵌的）。
+11. 异度之刃「全物品」：1504 件 / 7 类型；防具筛选 883 件；搜「甜山葵」命中收藏品；「小技巧」21 张，搜「普攻自动」「刷牵绊」命中。
+12. 物品、技巧与牵绊不进任务统计；牵绊 id 进 `progress.lock.json`，改完跑 `node tools/build.mjs` 和 `--check`，新增/改名牵绊时才需要 `--lock`。
+13. Pokopia「物品」：1710 件 / 12 类；默认显示中文名 + 英文灰字，337 件标「原名」；筛选「材料」60 件，叠加地点「空空镇」8 件、方式「商店」仍 8 件；搜「石头」与「Stone」都命中；搜「方块类」同时命中图鉴里的宝可梦和物品；悬停喜好标签显示英文原名；窄屏（≤420px）无横向溢出。
+14. 流程交叉链接：Pokopia 第 1 章点「杰尼龟」切到图鉴并搜到宝可梦条目，点「火堆」切到物品并展开；链接悬停有提示；幻想传说 / 缩小帽 / 永恒传说不出现误链（0 个）。
 
 ## 已知风险与待办
 
@@ -211,6 +216,8 @@ GAMES[]                     游戏
 - 异度之刃：殖民地6 有 5 条中文维基缺页任务，中文名为暂拟；NS2 新增 1 条任务的中文名也是暂译。游戏内核对后跑 `--rename --game xenoblade` 修正。
 - 异度之刃 130 条限时任务的期限按剧情事件归纳（难民移居、奥达玛赴皇都、梅纳斯神殿、机神界中枢、离开中央工厂），未逐条对照游戏内任务菜单；发现偏差改对应任务的 `d` 即可，不需要 `--lock`。
 - 异度之刃 Boss 中文名已按蒙纳多研究本部的主线攻略对齐（如黑色的费斯、佐德、伊达波思、使徒罗兰）；序章的六三式、八二式机神兵沿用第２章的型号写法，来源没有序章流程。
+- 异度之刃牵绊对话 63 条按区域列出；中文名取 Xeno Series Wiki 的简体中文字段，地点是中文描述，未逐条进游戏对照。皇都封锁后能否补看，攻略站说法不一；本页按「第１５章前清完皇都 6 条」的稳妥路线标注。
+- 刷牵绊数值（连锁 +10、激励 +10~30、复活/治疗 +20、任务 +20~100、送礼 +18~30）来自 iMore 与 TheGamer；不同版本可能有出入，以游戏内为准。
 - 「相连的未来」43 个支线未逐条列入任务表；均无时限、无二选一，不影响主游戏 480 条的全任务统计。
 
 ## 事实来源
@@ -222,5 +229,10 @@ GAMES[]                     游戏
 - 异度之刃任务、区域、Boss、殖民地6 复兴素材：[蒙纳多研究本部（xenoblade.cn）](https://xenoblade.cn/)
 - 异度之刃主线流程与 Boss 机制：[Game8《Xenoblade Chronicles: Definitive Edition》攻略](https://game8.co/games/Xenoblade-Chronicles-Definitive-Edition)
 - 异度之刃任务总数（480/481）、130 限时、25 组二选一：[Xenoblade Wiki（Fandom）](https://xenoblade.fandom.com/wiki/Quest_(XC1))
+- 异度之刃牵绊对话清单、地点、牵绊值、昼夜与选项：[天幻网 FFSKY《异度之刃》专题](https://xenoblade.ffsky.cn/kizunatalk.htm)
+- 异度之刃牵绊对话角色、开放章节与简体中文名：[Xeno Series Wiki《Heart-to-Heart (XC1)》](https://www.xenoserieswiki.org/wiki/Heart-to-Heart_(XC1))
+- 异度之刃牵绊等级、战斗/任务/送礼收益：[iMore《Xenoblade Chronicles: Definitive Edition — Affinity Guide》](https://www.imore.com/xenoblade-chronicles-definitive-edition-affinity-guide)
+- 各角色喜欢的收集品与送礼数值：[TheGamer《Best Gifts For Each Character》](https://www.thegamer.com/xenoblade-chronicles-definitive-edition-gift-guide/)
+- 殖民地6 牵绊对话的复兴等级前置：[Gamer Guides《Heart-to-Hearts - Colony 6》](https://www.gamerguides.com/xenoblade-chronicles-definitive-edition/guide/affinity-chart/colony-6/heart-to-hearts)
 - 宝可梦 Pokopia：[Serebii.net](https://www.serebii.net/pokemonpokopia/)、[Serebii 物品库](https://www.serebii.net/pokemonpokopia/items.shtml)、[Serebii Favorites](https://www.serebii.net/pokemonpokopia/favorites.shtml)、[Pokopia 攻略 Wiki（繁中）](https://pokopia.gamertw.com/zh-TW/item)、[Game8](https://game8.co/games/Pokemon-Pokopia/archives/583158)、[Nintendo Soup](https://nintendosoup.com/guide-how-to-befriend-all-legendary-pokemon-in-pokemon-pokopia)、[Pokopia Wiki](https://www.pokopiawiki.com/guides/how-to-befriend-with-raikou-entei-and-suicune)、[The Games Wiki](https://thegameswiki.com/pokopia/wiki/missable-events)；官方译名：[PokéAPI](https://github.com/PokeAPI/pokeapi/tree/master/data/v2/csv)
 - 汉化版存在性：幻想传说 X CHS 补丁 PSP 编号 `ULJS00293`；PS1《永恒传说》中文汉化版亦已存在（3 碟）

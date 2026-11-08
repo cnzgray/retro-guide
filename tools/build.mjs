@@ -147,6 +147,49 @@ function validate(name, g, problems) {
     }
   }
 
+  if (g.bonds !== undefined) {
+    if (!Array.isArray(g.bonds) || !g.bonds.length) bad("bonds 必须是非空数组");
+    else {
+      const areas = new Set(), ids = new Set();
+      g.bonds.forEach((grp, gi) => {
+        const at = `bonds[${gi}]`;
+        if (!isStr(grp.area)) bad(`${at} 需要 area`);
+        else if (areas.has(grp.area)) bad(`${at} 区域重复 —— ${grp.area}`);
+        else areas.add(grp.area);
+        if (grp.warn !== undefined && !isStr(grp.warn)) bad(`${at}.warn 必须是字符串`);
+        if (!Array.isArray(grp.items) || !grp.items.length) return bad(`${at} 需要非空 items`);
+        grp.items.forEach((it, ii) => {
+          const bat = `${at}.items[${ii}]`;
+          if (!isStr(it.id)) bad(`${bat} 需要非空字符串 id`);
+          else if (ids.has(it.id)) bad(`牵绊对话 id 重复 —— ${it.id}`);
+          else ids.add(it.id);
+          if (!isStr(it.n)) bad(`${bat} 需要 n`);
+          if (!isStr(it.loc)) bad(`${bat} 需要 loc`);
+          if (!isStrArr(it.chars) || it.chars.length !== 2) bad(`${bat}.chars 必须是两个角色名`);
+          if (![500, 1000, 2000, 3000, 5000].includes(it.pts)) bad(`${bat}.pts 必须是 500/1000/2000/3000/5000`);
+          if (it.night !== undefined && it.night !== 1 && it.night !== true) bad(`${bat}.night 只能是 1/true`);
+          if (!isStr(it.unlock)) bad(`${bat} 需要 unlock`);
+          if (it.req !== undefined && !isStr(it.req)) bad(`${bat}.req 必须是字符串`);
+          if (it.alt !== undefined && !isStr(it.alt)) bad(`${bat}.alt 必须是字符串`);
+        });
+      });
+    }
+  }
+
+  if (g.bondMeta !== undefined) {
+    if (!g.bonds) bad("bondMeta 需要配合 bonds");
+    for (const k of ["title", "tab", "note", "foot"]) if (!isStr(g.bondMeta?.[k])) bad(`bondMeta 需要 ${k}`);
+    if (g.bondMeta.chars !== undefined) {
+      if (!isStrArr(g.bondMeta.chars) || !g.bondMeta.chars.length) bad("bondMeta.chars 必须是非空字符串数组");
+      else {
+        const names = new Set(g.bondMeta.chars);
+        for (const grp of g.bonds || []) for (const it of grp.items || []) {
+          for (const c of it.chars || []) if (!names.has(c)) bad(`牵绊对话 ${it.id} 的角色「${c}」不在 bondMeta.chars 中`);
+        }
+      }
+    }
+  }
+
   if (g.catalog !== undefined) {
     if (!Array.isArray(g.catalog) || !g.catalog.length) bad("catalog 必须是非空数组");
     else {
@@ -231,6 +274,8 @@ function validate(name, g, problems) {
   const plain = [g.title, g.short, g.tabs, ...g.chapters.flatMap((c) => [c.title, c.area, ...(c.items || [])]),
     ...g.checks.flatMap((c) => [c.t, ...(c.items || [])]), ...g.qa.map((q) => q.q), ...g.bosses.flatMap((b) => [b.n, b.s]),
     ...(g.quests || []).flatMap((grp) => [grp.area, ...grp.items.flatMap((it) => [it.n, ...(it.g ? [it.g] : []), ...(it.d ? [it.d] : []), ...(it.rw || [])])]),
+    ...(g.bonds || []).flatMap((grp) => [grp.area, ...(grp.warn ? [grp.warn] : []), ...grp.items.flatMap((it) => [it.n, it.loc, ...(it.chars || []), ...(it.unlock ? [it.unlock] : []), ...(it.req ? [it.req] : []), ...(it.alt ? [it.alt] : [])])]),
+    ...(g.bondMeta ? [g.bondMeta.title, g.bondMeta.tab, ...(g.bondMeta.chars || [])] : []),
     ...(g.catalog || []).flatMap((grp) => [grp.t, ...grp.items.flatMap((it) => [it.n, ...(it.a ? [it.a] : []), ...(it.u ? [it.u] : [])])]),
     ...(g.items || []).flatMap((grp) => [grp.t, ...grp.items.flatMap((it) => [it.n, ...(it.en ? [it.en] : []), ...(it.a ? [it.a] : []), ...(it.l || []), ...(it.p || []), ...(it.w || [])])]),
     ...(g.itemsMeta ? [g.itemsMeta.title, g.itemsMeta.tab, g.itemsMeta.unit, g.itemsMeta.stat, ...(g.itemsMeta.filters || []), ...(g.itemsMeta.places || []), ...(g.itemsMeta.ways || []), ...Object.entries(g.itemsMeta.favMap || {}).flat()] : []),
@@ -316,6 +361,7 @@ function snapshot(games) {
     chapters: Object.fromEntries((g.chapters || []).map((c) => [c.id, { title: c.title, warn: (c.warn || []).length }])),
     checks: (g.checks || []).map((grp) => grp.items || []),
     ...(g.quests ? { quests: Object.fromEntries(g.quests.flatMap((grp) => grp.items.map((it) => [String(it.id), { n: it.n, t: it.t ? 1 : 0, x: it.x || "" }]))) } : {}),
+    ...(g.bonds ? { bonds: Object.fromEntries(g.bonds.flatMap((grp) => grp.items.map((it) => [String(it.id), { n: it.n }]))) } : {}),
   }]));
 }
 
@@ -350,6 +396,17 @@ function lockIssues(lock, next) {
         for (const qid of Object.keys(now.quests)) if (!was.quests[qid]) drift.push(`${id}: 新任务 ${qid} 未登记`);
       }
     } else if (now.quests) drift.push(`${id}: 新增任务表未登记`);
+    if (was.bonds) {
+      if (!now.bonds) gone.push(`${id}: 牵绊对话表被移除，玩家进度会丢`);
+      else {
+        for (const [bid, b] of Object.entries(was.bonds)) {
+          const cur = now.bonds[bid];
+          if (!cur) { gone.push(`${id}: 牵绊对话 id ${bid} 消失，玩家进度会丢`); continue; }
+          if (cur.n !== b.n) drift.push(`${id}: 牵绊对话 ${bid} 名称「${b.n}」→「${cur.n}」，确认没有换成别的条目`);
+        }
+        for (const bid of Object.keys(now.bonds)) if (!was.bonds[bid]) drift.push(`${id}: 新增牵绊对话 ${bid} 未登记`);
+      }
+    } else if (now.bonds) drift.push(`${id}: 新增牵绊对话表未登记`);
   }
   for (const id of Object.keys(next)) if (!lock[id]) drift.push(`${id}: 新游戏未登记`);
   return { gone, drift };

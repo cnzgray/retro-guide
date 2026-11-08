@@ -181,6 +181,7 @@
   .qchip:hover{border-color:var(--focus);color:#e7ecf3}
   .qchip.on{color:var(--acc);border-color:var(--a45);background:var(--a10)}
   .qchip.sep{margin-left:auto;color:#6d7989}
+  .bgroup > .warn{margin:0 0 8px}
   details.qgroup{border:1px solid var(--line);border-radius:12px;background:var(--panel);margin-bottom:8px;overflow:hidden}
   details.qgroup summary{list-style:none;cursor:pointer;padding:10px 12px;display:flex;align-items:center;gap:9px;font-size:13px;color:#a9b6c6;user-select:none}
   details.qgroup summary::-webkit-details-marker{display:none}
@@ -202,6 +203,7 @@
   .qbadge.x{color:#ff9d9d;background:rgba(255,138,138,.08);border-color:rgba(255,138,138,.3)}
   .qbadge.s{color:#9fc7ff;background:rgba(122,184,255,.08);border-color:rgba(122,184,255,.28)}
   .qbadge.ns2{color:#c7a6ff;background:rgba(180,140,255,.09);border-color:rgba(180,140,255,.3)}
+  .qbadge.night{color:#8fd8c8;background:rgba(143,216,200,.08);border-color:rgba(143,216,200,.28)}
   .qbadge.v{color:#9aa7b6;background:#151d26;border-color:#2a3543;cursor:help}
   label.qitem.locked{opacity:.5}
   label.qitem.locked .qname{text-decoration:line-through}

@@ -7,7 +7,7 @@ const GAMES = (window.RETRO_GAME_IDS || []).map((id) => (window.RETRO_GAMES || {
    状态
    ========================================================= */
 const KEY="retroGuide.v1";
-let state={game:"minish",done:{},checks:{},quests:{}};
+let state={game:"minish",done:{},checks:{},quests:{},bonds:{}};
 try{
   const raw=localStorage.getItem(KEY);
   if(raw){
@@ -18,8 +18,12 @@ try{
 if(!state.done)state.done={};
 if(!state.checks)state.checks={};
 if(!state.quests)state.quests={};
+if(!state.bonds)state.bonds={};
 if(!state.views)state.views={};
 let questFilter="all";
+let bondFilter="all";
+let bondChar="";
+let bondLv="";
 let itemFilter="all";
 let itemUser="";
 let itemClass="";
@@ -37,9 +41,11 @@ const doneList=()=>state.done[gid()]||(state.done[gid()]=[]);
 const isDone=id=>doneList().includes(id);
 const questList=()=>state.quests[gid()]||(state.quests[gid()]={});
 const isQuestDone=id=>!!questList()[String(id)];
+const bondList=()=>state.bonds[gid()]||(state.bonds[gid()]={});
+const isBondDone=id=>!!bondList()[String(id)];
 const ARMOR_CLASS={"轻":"轻型","中":"中型","重":"重型","机":"机界"};
 function panels(g){
-  return [["flow","流程"],...(g.quests?[["quests","任务"]]:[]),["help",g.tips?"急救与技巧":"急救"],...(g.catalog?[["catalog",g.catalogMeta?.tab||"物品"]]:[]),...(g.items?[["items",g.itemsMeta?.tab||"物品"]]:[]),["collect","收集"],["boss",g.bossMeta?.tab||"Boss"]];
+  return [["flow","流程"],...(g.quests?[["quests","任务"]]:[]),...(g.bonds?[["bonds",g.bondMeta?.tab||"牵绊"]]:[]),["help",g.tips?"急救与技巧":"急救"],...(g.catalog?[["catalog",g.catalogMeta?.tab||"物品"]]:[]),...(g.items?[["items",g.itemsMeta?.tab||"物品"]]:[]),["collect","收集"],["boss",g.bossMeta?.tab||"Boss"]];
 }
 function showPanel(id,remember=true){
   const g=game();
@@ -74,6 +80,7 @@ function renderToc(){
     <a href="#top" data-go="top">概览</a>
     <a href="#flow" data-go="flow">流程（${g.chapters.length} 章）</a>
     ${g.quests?`<a href="#quests" data-go="quests">全任务</a>`:""}
+    ${g.bonds?`<a href="#bonds" data-go="bonds">${esc(g.bondMeta?.title||"全牵绊对话")}</a>`:""}
     <a href="#help" data-go="help">卡关急救</a>
     ${g.tips?`<a href="#tips" data-go="tips">小技巧</a>`:""}
     ${g.catalog?`<a href="#catalog" data-go="catalog">${esc(g.catalogMeta?.title||"全物品")}</a>`:""}
@@ -227,6 +234,65 @@ function questSectionHTML(g){
   </div>
   <div id="qgroups">${body}</div>
   <p class="qfoot"><span class="star">?</span> 标记的 6 条是中文维基缺页或 NS2 新增，中文名与奖励名为暂拟，游戏内以实际显示为准。奖励列任务菜单里的金钱 / EXP / 评价 / 道具；道具名后的 [0]/[1]/[2] 是装备插槽数，第５性格等额外解锁标在奖励末尾，未标出的以游戏内为准。勾选「二选一」中的一条后，另一条会自动锁定；想换分支，先取消已勾的那条。本表不含《相连的未来》的 43 个支线（均无时限、无二选一）。</p>`;
+}
+
+function affinityLevel(pts){
+  return pts>=5000?"粉":pts>=3000?"紫":pts>=2000?"青":pts>=1000?"绿":"黄";
+}
+
+function bondsHTML(g){
+  const meta=g.bondMeta||{};
+  const all=g.bonds.flatMap(grp=>grp.items);
+  const done=all.filter(it=>isBondDone(it.id)).length;
+  const night=all.filter(it=>it.night).length;
+  const pct=all.length?(done/all.length*100).toFixed(2):"0";
+  const charList=meta.chars&&meta.chars.length?meta.chars:[...new Set(all.flatMap(it=>it.chars))];
+  const levelList=["黄","绿","青","紫","粉"];
+  const body=g.bonds.map((grp,gi)=>{
+    const items=grp.items.map(it=>{
+      const lv=affinityLevel(it.pts);
+      const who=it.chars.join(" × ");
+      const search=[it.n,grp.area,it.loc,who,...it.chars,lv,it.pts+"点",it.night?"仅夜间":"",it.unlock,it.req,it.alt,"牵绊对话","羁绊对话","羁绊任务"].filter(Boolean).join(" ").toLowerCase();
+      return `<label class="chk qitem" data-search="${esc(search)}" data-bid="${esc(it.id)}" data-bchars="${esc(it.chars.join("|"))}" data-blv="${lv}"${it.night?' data-bnight="1"':""}>
+        <input type="checkbox" data-b="${esc(it.id)}" ${isBondDone(it.id)?"checked":""}>
+        <span class="qbody">
+          <span class="qname">${esc(it.n)}${it.night?' <i class="qbadge night">仅夜间</i>':""}${it.alt?' <i class="qbadge v" title="有另一版本，见下方说明">另一版</i>':""}</span>
+          <span class="qmeta"><span class="qgiver">${esc(who)}</span><span class="qdeadline">牵绊：${lv}（${it.pts}）</span>${it.req?`<span class="qdeadline">${esc(it.req)}</span>`:""}</span>
+          <span class="qreward">${esc(it.loc)} · ${esc(it.unlock)}</span>
+          ${it.alt?`<span class="qreward">${esc(it.alt)}</span>`:""}
+        </span>
+      </label>`;
+    }).join("");
+    const grpDone=grp.items.filter(it=>isBondDone(it.id)).length;
+    return `<div class="bgroup" data-bgrp="${gi}">
+      ${grp.warn?`<div class="warn"><b>易漏 / 时限</b>　${esc(grp.warn)}</div>`:""}
+      <details class="qgroup"><summary><span class="qarea">${esc(grp.area)}</span><span class="qcnt${grpDone===grp.items.length?" full":""}" data-bcnt="${gi}">${grpDone} / ${grp.items.length}</span></summary><div class="qitems">${items}</div></details>
+    </div>`;
+  }).join("");
+  return `<div class="qhead">
+    <div class="qstats"><b id="bdone">${done}</b><span>/ ${all.length} 已看</span><span class="qmax">${g.bonds.length} 区域 · ${night} 条仅夜间</span></div>
+    <div class="qbar"><i id="bfill" style="width:${pct}%"></i></div>
+    <div class="qnote">${meta.note||""}</div>
+  </div>
+  <div class="qchips" id="bfilters">
+    <button class="qchip on" data-bfilter="all">全部</button>
+    <button class="qchip" data-bfilter="undone">未完成</button>
+    <button class="qchip" data-bfilter="done">已完成</button>
+    <button class="qchip" data-bfilter="night">仅夜间</button>
+    <button class="qchip" data-bnext="1">下一个未完成</button>
+    <button class="qchip sep" data-bexpand="1">展开全部</button>
+    <button class="qchip" data-bexpand="0">收起全部</button>
+  </div>
+  <div class="qchips" id="bchars">
+    <button class="qchip on" data-bchar="">全部角色</button>
+    ${charList.map(c=>`<button class="qchip" data-bchar="${esc(c)}">${esc(c)}</button>`).join("")}
+  </div>
+  <div class="qchips" id="blevels">
+    <button class="qchip on" data-blv="">全部等级</button>
+    ${levelList.map(l=>`<button class="qchip" data-blv="${l}">${l}</button>`).join("")}
+  </div>
+  <div id="bgroups">${body}</div>
+  <p class="qfoot">${meta.foot||""}</p>`;
 }
 
 function tipsHTML(g){
@@ -554,9 +620,90 @@ function bindQuestEvents(){
   });
 }
 
+function renderBondProgress(){
+  const g=game(); if(!g.bonds)return;
+  const all=g.bonds.flatMap(grp=>grp.items);
+  const done=all.filter(it=>isBondDone(it.id)).length;
+  const pct=all.length?(done/all.length*100).toFixed(2):0;
+  const el=$("#bdone"); if(el)el.textContent=done;
+  const fill=$("#bfill"); if(fill)fill.style.width=pct+"%";
+}
+
+function updateBondCounts(){
+  const g=game(); if(!g.bonds)return;
+  document.querySelectorAll("#bonds details.qgroup").forEach((d,gi)=>{
+    const grp=g.bonds[gi]; if(!grp)return;
+    const done=grp.items.filter(it=>isBondDone(it.id)).length;
+    const c=d.querySelector("[data-bcnt]");
+    if(c){c.textContent=done+" / "+grp.items.length;c.classList.toggle("full",done===grp.items.length);}
+  });
+}
+
+function applyBondFilter(filter){
+  const root=$("#bonds"); if(!root)return;
+  bondFilter=filter||"all";
+  const q=($("#search").value||"").trim().toLowerCase();
+  document.querySelectorAll("#bonds .qitem").forEach(el=>{
+    const done=isBondDone(el.dataset.bid);
+    let ok=true;
+    if(bondFilter==="undone")ok=!done;
+    else if(bondFilter==="done")ok=done;
+    else if(bondFilter==="night")ok=!!el.dataset.bnight;
+    if(ok&&bondChar)ok=(el.dataset.bchars||"").split("|").includes(bondChar);
+    if(ok&&bondLv)ok=el.dataset.blv===bondLv;
+    if(ok&&q)ok=el.dataset.search.includes(q);
+    el.classList.toggle("hidden",!ok);
+  });
+  document.querySelectorAll("#bonds .bgroup").forEach(d=>{
+    const any=[...d.querySelectorAll(".qitem")].some(el=>!el.classList.contains("hidden"));
+    d.classList.toggle("hidden",!any);
+    const det=d.querySelector("details.qgroup");
+    if(det&&(q||bondFilter!=="all"||bondChar||bondLv)&&any)det.open=true;
+  });
+  const any=document.querySelectorAll("#bonds .qitem:not(.hidden)").length;
+  let nr=document.getElementById("bnores");
+  if(!any&&(q||bondFilter!=="all"||bondChar||bondLv)){
+    if(!nr){nr=document.createElement("div");nr.id="bnores";nr.className="nores";nr.textContent="没有匹配的牵绊对话，换个筛选或关键词";$("#bgroups").appendChild(nr);}
+  }else if(nr)nr.remove();
+  document.querySelectorAll("#bfilters [data-bfilter]").forEach(b=>b.classList.toggle("on",b.dataset.bfilter===bondFilter));
+  document.querySelectorAll("#bchars [data-bchar]").forEach(b=>b.classList.toggle("on",b.dataset.bchar===bondChar));
+  document.querySelectorAll("#blevels [data-blv]").forEach(b=>b.classList.toggle("on",b.dataset.blv===bondLv));
+}
+
+function bindBondEvents(){
+  const root=$("#bonds"); if(!root)return;
+  root.addEventListener("change",e=>{
+    const cb=e.target.closest("input[data-b]"); if(!cb)return;
+    const list=bondList();
+    if(cb.checked)list[String(cb.dataset.b)]=1;else delete list[String(cb.dataset.b)];
+    save();renderBondProgress();updateBondCounts();applyBondFilter(bondFilter);
+  });
+  root.addEventListener("click",e=>{
+    const f=e.target.closest("[data-bfilter]");
+    if(f){applyBondFilter(f.dataset.bfilter);return;}
+    const c=e.target.closest("#bchars [data-bchar]");
+    if(c){bondChar=c.dataset.bchar;applyBondFilter(bondFilter);return;}
+    const l=e.target.closest("#blevels [data-blv]");
+    if(l){bondLv=l.dataset.blv;applyBondFilter(bondFilter);return;}
+    if(e.target.closest("[data-bnext]")){
+      const next=[...root.querySelectorAll(".qitem:not(.hidden)")].find(el=>!isBondDone(el.dataset.bid));
+      if(next){next.closest("details").open=true;next.scrollIntoView({behavior:"smooth",block:"center"});}
+      return;
+    }
+    const x=e.target.closest("[data-bexpand]");
+    if(x){
+      const open=x.dataset.bexpand==="1";
+      root.querySelectorAll("details.qgroup").forEach(d=>{if(!d.closest(".bgroup").classList.contains("hidden"))d.open=open;});
+    }
+  });
+}
+
 function build(){
   const g=game();
   questFilter="all";
+  bondFilter="all";
+  bondChar="";
+  bondLv="";
   itemFilter="all";
   itemUser="";
   itemClass="";
@@ -585,6 +732,7 @@ function build(){
   </div>
 
   ${g.quests?`<section id="quests" data-panel="quests"><h2 class="sec">全任务</h2>${questSectionHTML(g)}</section>`:""}
+  ${g.bonds?`<section id="bonds" data-panel="bonds"><h2 class="sec">${esc(g.bondMeta?.title||"全牵绊对话")}</h2>${bondsHTML(g)}</section>`:""}
 
   <div data-panel="help">
   <h2 class="sec" id="help">卡关急救</h2>
@@ -655,10 +803,13 @@ function build(){
   });
   updateCounts();
   bindQuestEvents();
+  bindBondEvents();
   bindCatalogEvents();
   bindItemsEvents();
   renderQuestProgress();
+  renderBondProgress();
   updateQuestCounts();
+  updateBondCounts();
   applySearch($("#search").value);
 }
 
@@ -686,7 +837,7 @@ function applySearch(q){
   const nodes=document.querySelectorAll("[data-search]");
   let hits=0;
   nodes.forEach(n=>{
-    if(n.closest("#quests")||n.closest("#catalog")||n.closest("#items"))return;
+    if(n.closest("#quests")||n.closest("#bonds")||n.closest("#catalog")||n.closest("#items"))return;
     const ok=!q||n.dataset.search.includes(q);
     n.classList.toggle("hidden",!ok);
     if(ok&&q)hits++;
@@ -701,9 +852,11 @@ function applySearch(q){
     });
   });
   applyQuestFilter(questFilter);
+  applyBondFilter(bondFilter);
   applyItemFilter(itemFilter);
   applyItemsFilter(itemsFilter);
   const qhits=document.querySelectorAll("#quests .qitem:not(.hidden)").length;
+  const bhits=document.querySelectorAll("#bonds .qitem:not(.hidden)").length;
   const ihits=document.querySelectorAll("#catalog .citem:not(.hidden)").length;
   const xhits=document.querySelectorAll("#items .citem:not(.hidden)").length;
   document.querySelectorAll("details.qa,details.tipcard").forEach(d=>{d.open=!!q&&!d.classList.contains("hidden");});
@@ -715,7 +868,7 @@ function applySearch(q){
     if(q)b.classList.toggle("on",!!document.querySelector(`#main [data-panel="${b.dataset.view}"]:not(.hidden)`));
   });
   let nr=$("#nores");
-  if(q&&!hits&&!qhits&&!ihits&&!xhits){
+  if(q&&!hits&&!qhits&&!bhits&&!ihits&&!xhits){
     if(!nr){nr=document.createElement("div");nr.id="nores";nr.className="nores";nr.textContent="没有匹配，换个词试试";$("#main").appendChild(nr);}
   }else if(nr){nr.remove();}
 }
