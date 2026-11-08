@@ -235,3 +235,31 @@ test("--rename 同步牵绊角色表", (t) => {
 test("牵绊角色必须在筛选表里", (t) => {
   assertFails(t, XENOBLADE, (s) => s.replace('chars:["修尔克", "菲奥伦"]', 'chars:["修尔克", "路人"]'), /不在 bondMeta\.chars 中/);
 });
+
+test("NPC id 重复", (t) => {
+  assertFails(t, XENOBLADE, (s) => s.replace('id:"n1"', 'id:"n2"'), /NPC id 重复/);
+});
+
+test("NPC 缺作息", (t) => {
+  assertFails(t, XENOBLADE, (s) => s.replace('schedules:[{a:"９号殖民地",l:"居住区 休憩广场",t:"18:00–3:00"}]', 'schedules:[]'), /schedules 必须是非空数组/);
+});
+
+test("NPC 种族必须在筛选表里", (t) => {
+  assertFails(t, XENOBLADE, (s) => s.replace('race:"诺彭"', 'race:"路人"'), /不在 npcMeta\.races 中/);
+});
+
+test("NPC 活动区域必须在顺序表里", (t) => {
+  assertFails(t, XENOBLADE, (s) => s.replace('schedules:[{a:"９号殖民地"', 'schedules:[{a:"某地"'), /不在 npcMeta\.areas 中/);
+});
+
+test("NPC 删除会被进度锁拦住", (t) => {
+  const { run, edit } = sandbox(t);
+  edit(XENOBLADE, (s) => s.replace(/^\s*\{id:"n1"[^\n]*\n/m, ""));
+  assert.match(run("--check").out, /NPC id n1 消失/);
+  const lock = run("--lock");
+  assert.equal(lock.code, 1, lock.out);
+});
+
+test("NPC 作息时间格式", (t) => {
+  assertFails(t, XENOBLADE, (s) => s.replace('t:"18:00–3:00"', 't:"18-3"'), /必须是「6:00–15:00」格式/);
+});

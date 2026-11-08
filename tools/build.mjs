@@ -190,6 +190,62 @@ function validate(name, g, problems) {
     }
   }
 
+  if (g.npcs !== undefined) {
+    if (!Array.isArray(g.npcs) || !g.npcs.length) bad("npcs 必须是非空数组");
+    else {
+      const areas = new Set(), ids = new Set();
+      g.npcs.forEach((grp, gi) => {
+        const at = `npcs[${gi}]`;
+        if (!isStr(grp.area)) bad(`${at} 需要 area`);
+        else if (areas.has(grp.area)) bad(`${at} 区域重复 —— ${grp.area}`);
+        else areas.add(grp.area);
+        if (!Array.isArray(grp.items) || !grp.items.length) return bad(`${at} 需要非空 items`);
+        grp.items.forEach((it, ii) => {
+          const nat = `${at}.items[${ii}]`;
+          if (!isStr(it.id)) bad(`${nat} 需要非空字符串 id`);
+          else if (ids.has(it.id)) bad(`NPC id 重复 —— ${it.id}`);
+          else ids.add(it.id);
+          if (!isStr(it.n)) bad(`${nat} 需要 n`);
+          if (!isStr(it.race)) bad(`${nat} 需要 race`);
+          if (!isStr(it.sex)) bad(`${nat} 需要 sex`);
+          if (!(Number.isInteger(it.age) && it.age >= 0)) bad(`${nat}.age 必须是非负整数`);
+          if (it.jobs !== undefined && !isStrArr(it.jobs)) bad(`${nat}.jobs 必须是字符串数组`);
+          if (!Array.isArray(it.schedules) || !it.schedules.length) bad(`${nat}.schedules 必须是非空数组`);
+          else it.schedules.forEach((s, si) => {
+            for (const k of ["a", "l", "t"]) if (!isStr(s?.[k])) bad(`${nat}.schedules[${si}] 需要 ${k}`);
+            if (isStr(s?.t) && !/^\d{1,2}:00–\d{1,2}:00$/.test(s.t)) bad(`${nat}.schedules[${si}].t 必须是「6:00–15:00」格式`);
+          });
+          if (it.gifts !== undefined && !isStrArr(it.gifts)) bad(`${nat}.gifts 必须是字符串数组`);
+          if (it.tradeCount !== undefined && !(Number.isInteger(it.tradeCount) && it.tradeCount >= 0)) bad(`${nat}.tradeCount 必须是非负整数`);
+          if (it.tradeMax !== undefined && !(Number.isInteger(it.tradeMax) && it.tradeMax >= 1 && it.tradeMax <= 5)) bad(`${nat}.tradeMax 必须是 1–5`);
+          if (it.tradeTop !== undefined && !isStrArr(it.tradeTop)) bad(`${nat}.tradeTop 必须是字符串数组`);
+          if (it.variant !== undefined && it.variant !== 1 && it.variant !== true) bad(`${nat}.variant 只能是 1/true`);
+        });
+      });
+    }
+  }
+
+  if (g.npcMeta !== undefined) {
+    if (!g.npcs) bad("npcMeta 需要配合 npcs");
+    for (const k of ["title", "tab", "note", "foot"]) if (!isStr(g.npcMeta?.[k])) bad(`npcMeta 需要 ${k}`);
+    if (!isStrArr(g.npcMeta?.races) || !g.npcMeta.races.length) bad("npcMeta.races 必须是非空字符串数组");
+    else {
+      const races = new Set(g.npcMeta.races);
+      for (const grp of g.npcs || []) for (const it of grp.items || []) {
+        if (!races.has(it.race)) bad(`NPC ${it.id} 的种族「${it.race}」不在 npcMeta.races 中`);
+      }
+    }
+    if (g.npcMeta.areas !== undefined) {
+      if (!isStrArr(g.npcMeta.areas) || !g.npcMeta.areas.length) bad("npcMeta.areas 必须是非空字符串数组");
+      else {
+        const areas = new Set(g.npcMeta.areas);
+        for (const grp of g.npcs || []) for (const it of grp.items || []) {
+          for (const s of it.schedules || []) if (!areas.has(s.a)) bad(`NPC ${it.id} 的活动区域「${s.a}」不在 npcMeta.areas 中`);
+        }
+      }
+    }
+  }
+
   if (g.catalog !== undefined) {
     if (!Array.isArray(g.catalog) || !g.catalog.length) bad("catalog 必须是非空数组");
     else {
@@ -276,6 +332,8 @@ function validate(name, g, problems) {
     ...(g.quests || []).flatMap((grp) => [grp.area, ...grp.items.flatMap((it) => [it.n, ...(it.g ? [it.g] : []), ...(it.d ? [it.d] : []), ...(it.rw || [])])]),
     ...(g.bonds || []).flatMap((grp) => [grp.area, ...(grp.warn ? [grp.warn] : []), ...grp.items.flatMap((it) => [it.n, it.loc, ...(it.chars || []), ...(it.unlock ? [it.unlock] : []), ...(it.req ? [it.req] : []), ...(it.alt ? [it.alt] : [])])]),
     ...(g.bondMeta ? [g.bondMeta.title, g.bondMeta.tab, ...(g.bondMeta.chars || [])] : []),
+    ...(g.npcs || []).flatMap((grp) => [grp.area, ...grp.items.flatMap((it) => [it.n, it.race, it.sex, it.age + "岁", ...(it.jobs || []), ...it.schedules.flatMap((s) => [s.a, s.l, s.t]), ...(it.gifts || []), ...(it.tradeTop || [])])]),
+    ...(g.npcMeta ? [g.npcMeta.title, g.npcMeta.tab, ...(g.npcMeta.races || []), ...(g.npcMeta.areas || [])] : []),
     ...(g.catalog || []).flatMap((grp) => [grp.t, ...grp.items.flatMap((it) => [it.n, ...(it.a ? [it.a] : []), ...(it.u ? [it.u] : [])])]),
     ...(g.items || []).flatMap((grp) => [grp.t, ...grp.items.flatMap((it) => [it.n, ...(it.en ? [it.en] : []), ...(it.a ? [it.a] : []), ...(it.l || []), ...(it.p || []), ...(it.w || [])])]),
     ...(g.itemsMeta ? [g.itemsMeta.title, g.itemsMeta.tab, g.itemsMeta.unit, g.itemsMeta.stat, ...(g.itemsMeta.filters || []), ...(g.itemsMeta.places || []), ...(g.itemsMeta.ways || []), ...Object.entries(g.itemsMeta.favMap || {}).flat()] : []),
@@ -362,6 +420,7 @@ function snapshot(games) {
     checks: (g.checks || []).map((grp) => grp.items || []),
     ...(g.quests ? { quests: Object.fromEntries(g.quests.flatMap((grp) => grp.items.map((it) => [String(it.id), { n: it.n, t: it.t ? 1 : 0, x: it.x || "" }]))) } : {}),
     ...(g.bonds ? { bonds: Object.fromEntries(g.bonds.flatMap((grp) => grp.items.map((it) => [String(it.id), { n: it.n }]))) } : {}),
+    ...(g.npcs ? { npcs: Object.fromEntries(g.npcs.flatMap((grp) => grp.items.map((it) => [String(it.id), { n: it.n }]))) } : {}),
   }]));
 }
 
@@ -407,6 +466,17 @@ function lockIssues(lock, next) {
         for (const bid of Object.keys(now.bonds)) if (!was.bonds[bid]) drift.push(`${id}: 新增牵绊对话 ${bid} 未登记`);
       }
     } else if (now.bonds) drift.push(`${id}: 新增牵绊对话表未登记`);
+    if (was.npcs) {
+      if (!now.npcs) gone.push(`${id}: NPC 表被移除，玩家登记进度会丢`);
+      else {
+        for (const [nid, n] of Object.entries(was.npcs)) {
+          const cur = now.npcs[nid];
+          if (!cur) { gone.push(`${id}: NPC id ${nid} 消失，玩家进度会丢`); continue; }
+          if (cur.n !== n.n) drift.push(`${id}: NPC ${nid} 名称「${n.n}」→「${cur.n}」，确认没有换成别的条目`);
+        }
+        for (const nid of Object.keys(now.npcs)) if (!was.npcs[nid]) drift.push(`${id}: 新增 NPC ${nid} 未登记`);
+      }
+    } else if (now.npcs) drift.push(`${id}: 新增 NPC 表未登记`);
   }
   for (const id of Object.keys(next)) if (!lock[id]) drift.push(`${id}: 新游戏未登记`);
   return { gone, drift };

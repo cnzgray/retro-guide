@@ -7,7 +7,7 @@ const GAMES = (window.RETRO_GAME_IDS || []).map((id) => (window.RETRO_GAMES || {
    状态
    ========================================================= */
 const KEY="retroGuide.v1";
-let state={game:"minish",done:{},checks:{},quests:{},bonds:{}};
+let state={game:"minish",done:{},checks:{},quests:{},bonds:{},npcs:{}};
 try{
   const raw=localStorage.getItem(KEY);
   if(raw){
@@ -19,11 +19,16 @@ if(!state.done)state.done={};
 if(!state.checks)state.checks={};
 if(!state.quests)state.quests={};
 if(!state.bonds)state.bonds={};
+if(!state.npcs)state.npcs={};
 if(!state.views)state.views={};
 let questFilter="all";
 let bondFilter="all";
 let bondChar="";
 let bondLv="";
+let npcFilter="all";
+let npcArea="";
+let npcRace="";
+let npcTime="";
 let itemFilter="all";
 let itemUser="";
 let itemClass="";
@@ -43,9 +48,11 @@ const questList=()=>state.quests[gid()]||(state.quests[gid()]={});
 const isQuestDone=id=>!!questList()[String(id)];
 const bondList=()=>state.bonds[gid()]||(state.bonds[gid()]={});
 const isBondDone=id=>!!bondList()[String(id)];
+const npcList=()=>state.npcs[gid()]||(state.npcs[gid()]={});
+const isNpcDone=id=>!!npcList()[String(id)];
 const ARMOR_CLASS={"轻":"轻型","中":"中型","重":"重型","机":"机界"};
 function panels(g){
-  return [["flow","流程"],...(g.quests?[["quests","任务"]]:[]),...(g.bonds?[["bonds",g.bondMeta?.tab||"牵绊"]]:[]),["help",g.tips?"急救与技巧":"急救"],...(g.catalog?[["catalog",g.catalogMeta?.tab||"物品"]]:[]),...(g.items?[["items",g.itemsMeta?.tab||"物品"]]:[]),["collect","收集"],["boss",g.bossMeta?.tab||"Boss"]];
+  return [["flow","流程"],...(g.quests?[["quests","任务"]]:[]),...(g.bonds?[["bonds",g.bondMeta?.tab||"牵绊"]]:[]),...(g.npcs?[["npcs",g.npcMeta?.tab||"NPC"]]:[]),["help",g.tips?"急救与技巧":"急救"],...(g.catalog?[["catalog",g.catalogMeta?.tab||"物品"]]:[]),...(g.items?[["items",g.itemsMeta?.tab||"物品"]]:[]),["collect","收集"],["boss",g.bossMeta?.tab||"Boss"]];
 }
 function showPanel(id,remember=true){
   const g=game();
@@ -81,6 +88,7 @@ function renderToc(){
     <a href="#flow" data-go="flow">流程（${g.chapters.length} 章）</a>
     ${g.quests?`<a href="#quests" data-go="quests">全任务</a>`:""}
     ${g.bonds?`<a href="#bonds" data-go="bonds">${esc(g.bondMeta?.title||"全牵绊对话")}</a>`:""}
+    ${g.npcs?`<a href="#npcs" data-go="npcs">${esc(g.npcMeta?.title||"全 NPC 一览")}</a>`:""}
     <a href="#help" data-go="help">卡关急救</a>
     ${g.tips?`<a href="#tips" data-go="tips">小技巧</a>`:""}
     ${g.catalog?`<a href="#catalog" data-go="catalog">${esc(g.catalogMeta?.title||"全物品")}</a>`:""}
@@ -292,6 +300,90 @@ function bondsHTML(g){
     ${levelList.map(l=>`<button class="qchip" data-blv="${l}">${l}</button>`).join("")}
   </div>
   <div id="bgroups">${body}</div>
+  <p class="qfoot">${meta.foot||""}</p>`;
+}
+
+function scheduleFlags(s,e){
+  let day=false,night=false;
+  for(let h=0;h<24;h++){
+    const active=s===e||(s<e?(h>=s&&h<e):(h>=s||h<e));
+    if(active){if(h>=6&&h<18)day=true;else night=true;}
+  }
+  return {day,night};
+}
+
+function questsByGiver(g){
+  const map={};
+  for(const grp of g.quests||[]) for(const q of grp.items){
+    if(q.g)(map[q.g]??=[]).push(q.n);
+  }
+  return map;
+}
+
+function npcsHTML(g){
+  const meta=g.npcMeta||{};
+  const all=g.npcs.flatMap(grp=>grp.items);
+  const done=all.filter(it=>isNpcDone(it.id)).length;
+  const pct=all.length?(done/all.length*100).toFixed(2):"0";
+  const presentAreas=new Set(g.npcs.flatMap(grp=>[grp.area,...grp.items.flatMap(it=>it.schedules.map(s=>s.a))]));
+  const areaList=(meta.areas&&meta.areas.length?meta.areas:[...presentAreas]).filter(a=>presentAreas.has(a));
+  for(const a of presentAreas) if(!areaList.includes(a)) areaList.push(a);
+  const raceList=meta.races&&meta.races.length?meta.races:[...new Set(all.map(it=>it.race))];
+  const qmap=questsByGiver(g);
+  const body=g.npcs.map((grp,gi)=>{
+    const items=grp.items.map(it=>{
+      const quests=qmap[it.n]||[];
+      const areas=[...new Set(it.schedules.map(s=>s.a))];
+      const flags=it.schedules.map(s=>scheduleFlags(Number(s.t.split(":")[0]),Number(s.t.split("–")[1].split(":")[0])));
+      const day=flags.some(f=>f.day),night=flags.some(f=>f.night);
+      const jobs=(it.jobs||[]).join(" / ");
+      const gifts=(it.gifts||[]).join(" / ");
+      const tradeTop=(it.tradeTop||[]).join(" / ");
+      const search=[it.n,it.race,it.sex,it.age+"岁",jobs,gifts,tradeTop,it.tradeCount?it.tradeCount+"件":"",it.tradeMax?"★"+it.tradeMax:"",...areas,...it.schedules.flatMap(s=>[s.a,s.l,s.t]),...quests,"NPC","NPC一览"].filter(Boolean).join(" ").toLowerCase();
+      return `<label class="chk qitem" data-search="${esc(search)}" data-nid="${esc(it.id)}" data-nareas="${esc(areas.join("|"))}" data-nrace="${esc(it.race)}" data-nquest="${quests.length?"1":"0"}" data-ntrade="${it.tradeCount?"1":"0"}" data-nday="${day?"1":"0"}" data-nnight="${night?"1":"0"}">
+        <input type="checkbox" data-n="${esc(it.id)}" ${isNpcDone(it.id)?"checked":""}>
+        <span class="qbody">
+          <span class="qname">${esc(it.n)}${it.variant?' <i class="qbadge v" title="含剧情/移民/任务分支状态，按当前进度取用">状态</i>':""}${quests.length?` <i class="qbadge s">任务 ${quests.length}</i>`:""}</span>
+          <span class="qmeta"><span class="qgiver">${esc(it.race)} · ${esc(it.sex)} · ${it.age} 岁</span>${jobs?`<span class="qgiver">${esc(jobs)}</span>`:""}</span>
+          ${it.schedules.map(s=>`<span class="qreward">${esc(s.a)} · ${esc(s.l)} · ${esc(s.t)}</span>`).join("")}
+          ${gifts?`<span class="qreward">喜欢：${esc(gifts)}</span>`:""}
+          ${it.tradeCount?`<span class="qreward">交易：${it.tradeCount} 件 · 最高 ★${it.tradeMax}${tradeTop?`（${esc(tradeTop)}）`:""}</span>`:""}
+          ${quests.length?`<span class="qreward">任务：${esc(quests.join("、"))}</span>`:""}
+        </span>
+      </label>`;
+    }).join("");
+    const grpDone=grp.items.filter(it=>isNpcDone(it.id)).length;
+    return `<details class="qgroup"><summary><span class="qarea">${esc(grp.area)}</span><span class="qcnt${grpDone===grp.items.length?" full":""}" data-ncnt="${gi}">${grpDone} / ${grp.items.length}</span></summary><div class="qitems">${items}</div></details>`;
+  }).join("");
+  return `<div class="qhead">
+    <div class="qstats"><b id="ndone">${done}</b><span>/ ${all.length} 已登记</span><span class="qmax">${areaList.length} 个活动区域 · ${raceList.length} 种族</span></div>
+    <div class="qbar"><i id="nfill" style="width:${pct}%"></i></div>
+    <div class="qnote">${meta.note||""}</div>
+  </div>
+  <div class="qchips" id="nfilters">
+    <button class="qchip on" data-nfilter="all">全部</button>
+    <button class="qchip" data-nfilter="undone">未登记</button>
+    <button class="qchip" data-nfilter="done">已登记</button>
+    <button class="qchip" data-nfilter="quest">有任务</button>
+    <button class="qchip" data-nfilter="trade">可交易</button>
+    <button class="qchip" data-nnext="1">下一个未登记</button>
+    <button class="qchip sep" data-nexpand="1">展开全部</button>
+    <button class="qchip" data-nexpand="0">收起全部</button>
+  </div>
+  <div class="qchips" id="nareas">
+    <button class="qchip on" data-narea="">全部区域</button>
+    ${areaList.map(a=>`<button class="qchip" data-narea="${esc(a)}">${esc(a)}</button>`).join("")}
+  </div>
+  <div class="qchips" id="nraces">
+    <button class="qchip on" data-nrace="">全部种族</button>
+    ${raceList.map(r=>`<button class="qchip" data-nrace="${esc(r)}">${esc(r)}</button>`).join("")}
+  </div>
+  <div class="qchips" id="ntimes">
+    <button class="qchip on" data-ntime="">全部时间</button>
+    <button class="qchip" data-ntime="day">白天（6–18）</button>
+    <button class="qchip" data-ntime="night">夜晚（18–6）</button>
+  </div>
+  <div id="ngroups">${body}</div>
   <p class="qfoot">${meta.foot||""}</p>`;
 }
 
@@ -698,12 +790,98 @@ function bindBondEvents(){
   });
 }
 
+function renderNpcProgress(){
+  const g=game(); if(!g.npcs)return;
+  const all=g.npcs.flatMap(grp=>grp.items);
+  const done=all.filter(it=>isNpcDone(it.id)).length;
+  const pct=all.length?(done/all.length*100).toFixed(2):0;
+  const el=$("#ndone"); if(el)el.textContent=done;
+  const fill=$("#nfill"); if(fill)fill.style.width=pct+"%";
+}
+
+function updateNpcCounts(){
+  const g=game(); if(!g.npcs)return;
+  document.querySelectorAll("#npcs details.qgroup").forEach((d,gi)=>{
+    const grp=g.npcs[gi]; if(!grp)return;
+    const done=grp.items.filter(it=>isNpcDone(it.id)).length;
+    const c=d.querySelector("[data-ncnt]");
+    if(c){c.textContent=done+" / "+grp.items.length;c.classList.toggle("full",done===grp.items.length);}
+  });
+}
+
+function applyNpcFilter(filter){
+  const root=$("#npcs"); if(!root)return;
+  npcFilter=filter||"all";
+  const q=($("#search").value||"").trim().toLowerCase();
+  document.querySelectorAll("#npcs .qitem").forEach(el=>{
+    const done=isNpcDone(el.dataset.nid);
+    let ok=true;
+    if(npcFilter==="undone")ok=!done;
+    else if(npcFilter==="done")ok=done;
+    else if(npcFilter==="quest")ok=el.dataset.nquest==="1";
+    else if(npcFilter==="trade")ok=el.dataset.ntrade==="1";
+    if(ok&&npcArea)ok=(el.dataset.nareas||"").split("|").includes(npcArea);
+    if(ok&&npcRace)ok=el.dataset.nrace===npcRace;
+    if(ok&&npcTime)ok=el.dataset["n"+npcTime]==="1";
+    if(ok&&q)ok=el.dataset.search.includes(q);
+    el.classList.toggle("hidden",!ok);
+  });
+  document.querySelectorAll("#npcs details.qgroup").forEach(d=>{
+    const any=[...d.querySelectorAll(".qitem")].some(el=>!el.classList.contains("hidden"));
+    d.classList.toggle("hidden",!any);
+    if((q||npcFilter!=="all"||npcArea||npcRace||npcTime)&&any)d.open=true;
+  });
+  const any=document.querySelectorAll("#npcs .qitem:not(.hidden)").length;
+  let nr=document.getElementById("nnores");
+  if(!any&&(q||npcFilter!=="all"||npcArea||npcRace||npcTime)){
+    if(!nr){nr=document.createElement("div");nr.id="nnores";nr.className="nores";nr.textContent="没有匹配的 NPC，换个筛选或关键词";$("#ngroups").appendChild(nr);}
+  }else if(nr)nr.remove();
+  document.querySelectorAll("#nfilters [data-nfilter]").forEach(b=>b.classList.toggle("on",b.dataset.nfilter===npcFilter));
+  document.querySelectorAll("#nareas [data-narea]").forEach(b=>b.classList.toggle("on",b.dataset.narea===npcArea));
+  document.querySelectorAll("#nraces [data-nrace]").forEach(b=>b.classList.toggle("on",b.dataset.nrace===npcRace));
+  document.querySelectorAll("#ntimes [data-ntime]").forEach(b=>b.classList.toggle("on",b.dataset.ntime===npcTime));
+}
+
+function bindNpcEvents(){
+  const root=$("#npcs"); if(!root)return;
+  root.addEventListener("change",e=>{
+    const cb=e.target.closest("input[data-n]"); if(!cb)return;
+    const list=npcList();
+    if(cb.checked)list[String(cb.dataset.n)]=1;else delete list[String(cb.dataset.n)];
+    save();renderNpcProgress();updateNpcCounts();applyNpcFilter(npcFilter);
+  });
+  root.addEventListener("click",e=>{
+    const f=e.target.closest("[data-nfilter]");
+    if(f){applyNpcFilter(f.dataset.nfilter);return;}
+    const a=e.target.closest("#nareas [data-narea]");
+    if(a){npcArea=a.dataset.narea;applyNpcFilter(npcFilter);return;}
+    const r=e.target.closest("#nraces [data-nrace]");
+    if(r){npcRace=r.dataset.nrace;applyNpcFilter(npcFilter);return;}
+    const t=e.target.closest("#ntimes [data-ntime]");
+    if(t){npcTime=t.dataset.ntime;applyNpcFilter(npcFilter);return;}
+    if(e.target.closest("[data-nnext]")){
+      const next=[...root.querySelectorAll(".qitem:not(.hidden)")].find(el=>!isNpcDone(el.dataset.nid));
+      if(next){next.closest("details").open=true;next.scrollIntoView({behavior:"smooth",block:"center"});}
+      return;
+    }
+    const x=e.target.closest("[data-nexpand]");
+    if(x){
+      const open=x.dataset.nexpand==="1";
+      root.querySelectorAll("details.qgroup").forEach(d=>{if(!d.classList.contains("hidden"))d.open=open;});
+    }
+  });
+}
+
 function build(){
   const g=game();
   questFilter="all";
   bondFilter="all";
   bondChar="";
   bondLv="";
+  npcFilter="all";
+  npcArea="";
+  npcRace="";
+  npcTime="";
   itemFilter="all";
   itemUser="";
   itemClass="";
@@ -733,6 +911,7 @@ function build(){
 
   ${g.quests?`<section id="quests" data-panel="quests"><h2 class="sec">全任务</h2>${questSectionHTML(g)}</section>`:""}
   ${g.bonds?`<section id="bonds" data-panel="bonds"><h2 class="sec">${esc(g.bondMeta?.title||"全牵绊对话")}</h2>${bondsHTML(g)}</section>`:""}
+  ${g.npcs?`<section id="npcs" data-panel="npcs"><h2 class="sec">${esc(g.npcMeta?.title||"全 NPC 一览")}</h2>${npcsHTML(g)}</section>`:""}
 
   <div data-panel="help">
   <h2 class="sec" id="help">卡关急救</h2>
@@ -804,12 +983,15 @@ function build(){
   updateCounts();
   bindQuestEvents();
   bindBondEvents();
+  bindNpcEvents();
   bindCatalogEvents();
   bindItemsEvents();
   renderQuestProgress();
   renderBondProgress();
+  renderNpcProgress();
   updateQuestCounts();
   updateBondCounts();
+  updateNpcCounts();
   applySearch($("#search").value);
 }
 
@@ -837,7 +1019,7 @@ function applySearch(q){
   const nodes=document.querySelectorAll("[data-search]");
   let hits=0;
   nodes.forEach(n=>{
-    if(n.closest("#quests")||n.closest("#bonds")||n.closest("#catalog")||n.closest("#items"))return;
+    if(n.closest("#quests")||n.closest("#bonds")||n.closest("#npcs")||n.closest("#catalog")||n.closest("#items"))return;
     const ok=!q||n.dataset.search.includes(q);
     n.classList.toggle("hidden",!ok);
     if(ok&&q)hits++;
@@ -853,10 +1035,12 @@ function applySearch(q){
   });
   applyQuestFilter(questFilter);
   applyBondFilter(bondFilter);
+  applyNpcFilter(npcFilter);
   applyItemFilter(itemFilter);
   applyItemsFilter(itemsFilter);
   const qhits=document.querySelectorAll("#quests .qitem:not(.hidden)").length;
   const bhits=document.querySelectorAll("#bonds .qitem:not(.hidden)").length;
+  const nhits=document.querySelectorAll("#npcs .qitem:not(.hidden)").length;
   const ihits=document.querySelectorAll("#catalog .citem:not(.hidden)").length;
   const xhits=document.querySelectorAll("#items .citem:not(.hidden)").length;
   document.querySelectorAll("details.qa,details.tipcard").forEach(d=>{d.open=!!q&&!d.classList.contains("hidden");});
@@ -868,7 +1052,7 @@ function applySearch(q){
     if(q)b.classList.toggle("on",!!document.querySelector(`#main [data-panel="${b.dataset.view}"]:not(.hidden)`));
   });
   let nr=$("#nores");
-  if(q&&!hits&&!qhits&&!bhits&&!ihits&&!xhits){
+  if(q&&!hits&&!qhits&&!bhits&&!nhits&&!ihits&&!xhits){
     if(!nr){nr=document.createElement("div");nr.id="nores";nr.className="nores";nr.textContent="没有匹配，换个词试试";$("#main").appendChild(nr);}
   }else if(nr){nr.remove();}
 }
