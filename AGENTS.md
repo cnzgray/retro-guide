@@ -13,7 +13,7 @@
 2. `build()` 切游戏时整体重渲染；勾选章节/收集项/任务/牵绊/NPC 只做局部更新——改成整页重绘会让滚动位置跳动。
 3. 时限要素（过了就没的事件）写进 `warn[]`，渲染成黄色 `.warn`；异度之刃的任务期限写进任务的 `d`，渲染成「期限：…」。这是本页核心价值，别降级成普通步骤。
 4. 主题色只动数据里的 `theme` 对象：构建生成 `assets/themes.css`，默认游戏写 `:root`，其余写 `body[data-game="<id>"]`；不要回 `src/app.css` 加逐作主题块，也不要再维护 `accent`。新增游戏时，数据文件、`theme`、译名表、页脚和 `LICENSE-CONTENT.md` 的署名都要补，缺了 `--check` 会红。
-5. 异度之刃的任务表在 `quests[]`：`t` 限时、`x` 二选一组（同组正好 2 条）、`s` 剧情、`ns2` NS2 新增、`v` 译名待核、`d` 期限、`m/e/f` 金钱/EXP/评价、`rw` 奖励道具数组。限时任务必须有 `d`；勾一条二选一会自动锁另一条。奖励显示在每条任务下方，并参与搜索。 `c` 是接取条件（委托人/作息/地点/评价值/主线进度/前置任务），`o` 是目标清单，任务卡显示并参与搜索。相连未来的 43 条支线在 `fvQuests[]`，勾选独立记进度，不计入主任务统计。
+5. 异度之刃的任务表在 `quests[]`：`t` 限时、`x` 二选一组（同组正好 2 条）、`s` 剧情、`ns2` NS2 新增、`v` 译名待核、`d` 期限、`m/e/f` 金钱/EXP/评价、`rw` 奖励道具数组。限时任务必须有 `d`；勾一条二选一会自动锁另一条。奖励显示在每条任务下方，并参与搜索。 `c` 是接取条件（委托人/作息/地点/评价值/第 X 章后/前置任务），`o` 是目标清单，任务卡显示并参与搜索。相连未来的 43 条支线在 `fvQuests[]`，勾选独立记进度，不计入主任务统计。
 6. 异度之刃的牵绊对话在 `bonds[]`，按区域分组，条目 `{id,n,loc,chars,pts,unlock,night,req,alt}`：`id` 只增不删、`chars` 正好两人、`pts` 只用 500/1000/2000/3000/5000、`night` 标仅夜间、`req` 写殖民地6 复兴限制、`alt` 写另一版本。组上的 `warn` 渲染成区域黄框；`bondMeta` 管标题、页签、角色筛选表 `chars`、说明与脚注；`chars` 必须覆盖每条牵绊的两个人名，否则 `--check` 红。牵绊进度存 `state.bonds`，并进 `progress.lock.json`。
 7. 异度之刃的 NPC 表在 `npcs[]`，按区域分组，条目 `{id,n,race,sex,age,jobs,schedules,gifts,tradeCount,tradeMax,tradeTop,variant}`：`id` 只增不删；同一 NPC 的多条作息写进 `schedules[{a,l,t}]`，不要拆成多个 id；`race` 和每个 `schedules[].a` 必须出现在 `npcMeta.races/areas` 里，否则 `--check` 红。NPC 进度存 `state.npcs`，并进 `progress.lock.json`。
 8. 异度之刃的物品表在 `catalog[]`（`t` 类型、`items:[{n,p,a,u,w}]`；`u` 武器专属角色、`w` 防具重量 轻/中/重/机，角色筛选按钮与能力规则在 `catalogUsers[]`），小技巧在 `tips[]`（`{t,a}`）。物品与技巧不参与进度键，不进 `progress.lock.json`；改完跑构建和 `--check` 即可。
