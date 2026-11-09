@@ -233,6 +233,8 @@
   .qbadge.s{color:#9fc7ff;background:rgba(122,184,255,.08);border-color:rgba(122,184,255,.28)}
   .qbadge.ns2{color:#c7a6ff;background:rgba(180,140,255,.09);border-color:rgba(180,140,255,.3)}
   .qbadge.lock{color:#ffb86b;background:rgba(255,184,107,.08);border-color:rgba(255,184,107,.3)}
+  .qbadge.chapter{color:#9fc7ff;background:rgba(122,184,255,.08);border-color:rgba(122,184,255,.28)}
+  .qbadge.chapter{color:#9fc7ff;background:rgba(122,184,255,.08);border-color:rgba(122,184,255,.28)}
   .qbadge.night{color:#8fd8c8;background:rgba(143,216,200,.08);border-color:rgba(143,216,200,.28)}
   .qbadge.v{color:#9aa7b6;background:#151d26;border-color:#2a3543;cursor:help}
   label.qitem.locked{opacity:.5}
