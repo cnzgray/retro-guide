@@ -205,15 +205,20 @@ function buildQuestPrereqs(g){
   const map=new Map();
   for(const it of all){
     if(!it.c||!it.c.includes("前置任务"))continue;
-    const expr=it.c.split("前置任务")[1].trim().replace(/\s*·\s*第\s*\d+\s*章后$/,"").trim();
-    const names=expr.split(/\s*或\s*/).map(x=>x.trim()).filter(Boolean);
-    const ids=[];
-    for(const name of names){
-      const local=byArea.get(it.area+"|"+name)||[];
-      const cand=local.length?local:(byName.get(name)||[]);
-      if(cand.length)ids.push(String(cand[0].id));
+    const andGroups=[];
+    for(const seg of it.c.split(" · 前置任务 ").slice(1)){
+      const expr=seg.replace(/ · 第 \d+ 章后$/,"").trim();
+      if(!expr)continue;
+      const names=expr.split(/\s*或\s*/).map(x=>x.trim()).filter(Boolean);
+      const ids=[];
+      for(const name of names){
+        const local=byArea.get(it.area+"|"+name)||[];
+        const cand=local.length?local:(byName.get(name)||[]);
+        if(cand.length)ids.push(String(cand[0].id));
+      }
+      if(ids.length)andGroups.push([...new Set(ids)]);
     }
-    if(ids.length)map.set(String(it.id),[...new Set(ids)]);
+    if(andGroups.length)map.set(String(it.id),andGroups);
   }
   return map;
 }
@@ -234,9 +239,10 @@ function questSectionHTML(g){
     const items=grp.items.map(it=>{
       const other=it.x?pairMap[it.x].find(x=>String(x.id)!==String(it.id)):null;
       const pairLocked=!!other&&!isQuestDone(it.id)&&isQuestDone(other.id);
-      const preIds=prereqMap.get(String(it.id))||[];
-      const preNames=preIds.map(x=>nameById.get(x)).filter(Boolean);
-      const preLocked=preIds.length>0&&!isQuestDone(it.id)&&!preIds.some(x=>isQuestDone(x));
+      const preGroups=prereqMap.get(String(it.id))||[];
+      const preIds=preGroups.flat();
+      const preTitle=preGroups.map(g=>g.map(x=>nameById.get(x)).filter(Boolean).join(" 或 ")).filter(Boolean).join("、");
+      const preLocked=preGroups.length>0&&!isQuestDone(it.id)&&!preGroups.every(g=>g.some(x=>isQuestDone(x)));
       const locked=pairLocked||preLocked;
       const flags=[it.t?"t":"",it.x?"x":"",it.s?"s":"",it.ns2?"ns2":""].filter(Boolean).join(" ");
       const giver=it.s?"剧情任务":it.g;
@@ -249,10 +255,10 @@ function questSectionHTML(g){
       const condText=it.c?"接取："+it.c:"";
       const objText=it.o&&it.o.length?"目标："+it.o.slice(0,4).join(" / ")+(it.o.length>4?" …":""):"";
       const search=[it.n,giver,grp.area,it.d,rewardText,it.c,it.xi,objText,it.t?"限时":"",it.x?"二选一":"",it.s?"剧情":"",it.ns2?"NS2":""].filter(Boolean).join(" ").toLowerCase();
-      return `<label class="chk qitem ${locked?"locked":""}" data-search="${esc(search)}" data-qid="${esc(String(it.id))}" data-qflags="${flags}"${other?` data-qother="${esc(String(other.id))}"`:""}${preIds.length?` data-prereq="${esc(preIds.join(","))}"`:""}>
+      return `<label class="chk qitem ${locked?"locked":""}" data-search="${esc(search)}" data-qid="${esc(String(it.id))}" data-qflags="${flags}"${other?` data-qother="${esc(String(other.id))}"`:""}${preGroups.length?` data-prereq="${esc(preGroups.map(g=>g.join(",")).join("|"))}"`:""}>
         <input type="checkbox" data-q="${esc(String(it.id))}" ${isQuestDone(it.id)?"checked":""} ${locked?"disabled":""}>
         <span class="qbody">
-          <span class="qname">${esc(it.n)}${it.t?' <i class="qbadge t">限时</i>':""}${it.x?` <i class="qbadge x" title="与「${esc(other?other.n:"同组另一条")}」互斥">二选一</i>`:""}${it.s?' <i class="qbadge s">剧情</i>':""}${it.ns2?' <i class="qbadge ns2">NS2</i>':""}${it.v?' <i class="qbadge v" title="中文译名待核">?</i>':""}${preIds.length?` <i class="qbadge lock" data-lockbadge style="${preLocked?"":"display:none"}" title="前置：${esc(preNames.join(" / "))}">前置未完成</i>`:""}</span>
+          <span class="qname">${esc(it.n)}${it.t?' <i class="qbadge t">限时</i>':""}${it.x?` <i class="qbadge x" title="与「${esc(other?other.n:"同组另一条")}」互斥">二选一</i>`:""}${it.s?' <i class="qbadge s">剧情</i>':""}${it.ns2?' <i class="qbadge ns2">NS2</i>':""}${it.v?' <i class="qbadge v" title="中文译名待核">?</i>':""}${preIds.length?` <i class="qbadge lock" data-lockbadge style="${preLocked?"":"display:none"}" title="前置：${esc(preTitle)}">前置未完成</i>`:""}</span>
           <span class="qmeta">${giver?`<span class="qgiver">${esc(giver)}</span>`:""}${it.d?`<span class="qdeadline">期限：${esc(it.d)}</span>`:""}</span>
           ${condText?`<span class="qcond">${esc(condText)}</span>`:""}
           <span class="qreward">奖励：${esc(rewardText)}</span>
@@ -751,9 +757,9 @@ function syncQuestLocks(){
   document.querySelectorAll("#quests .qitem").forEach(el=>{
     const self=el.dataset.qid;
     const other=el.dataset.qother;
-    const prereq=(el.dataset.prereq||"").split(",").filter(Boolean);
+    const prereq=(el.dataset.prereq||"").split("|").filter(Boolean).map(g=>g.split(",").filter(Boolean));
     const pairLocked=!!other&&!isQuestDone(self)&&isQuestDone(other);
-    const preLocked=prereq.length>0&&!isQuestDone(self)&&!prereq.some(x=>isQuestDone(x));
+    const preLocked=prereq.length>0&&!isQuestDone(self)&&!prereq.every(g=>g.some(x=>isQuestDone(x)));
     const locked=pairLocked||preLocked;
     el.classList.toggle("locked",locked);
     el.dataset.lockreason=pairLocked?"exclusive":(preLocked?"prereq":"");
