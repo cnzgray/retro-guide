@@ -243,7 +243,10 @@ function questSectionHTML(g){
       const preIds=preGroups.flat();
       const preTitle=preGroups.map(g=>g.map(x=>nameById.get(x)).filter(Boolean).join(" 或 ")).filter(Boolean).join("、");
       const preLocked=preGroups.length>0&&!isQuestDone(it.id)&&!preGroups.every(g=>g.some(x=>isQuestDone(x)));
-      const locked=pairLocked||preLocked;
+      const chapterMatch=it.c&&it.c.match(/第\s*(\d+)\s*章后/);
+      const chapter=chapterMatch?Number(chapterMatch[1]):0;
+      const chapterLocked=chapter>0&&!isQuestDone(it.id)&&!isDone("x"+(chapter+1));
+      const locked=pairLocked||preLocked||chapterLocked;
       const flags=[it.t?"t":"",it.x?"x":"",it.s?"s":"",it.ns2?"ns2":""].filter(Boolean).join(" ");
       const giver=it.s?"剧情任务":it.g;
       const reward=[];
@@ -255,10 +258,10 @@ function questSectionHTML(g){
       const condText=it.c?"接取："+it.c:"";
       const objText=it.o&&it.o.length?"目标："+it.o.slice(0,4).join(" / ")+(it.o.length>4?" …":""):"";
       const search=[it.n,giver,grp.area,it.d,rewardText,it.c,it.xi,objText,it.t?"限时":"",it.x?"二选一":"",it.s?"剧情":"",it.ns2?"NS2":""].filter(Boolean).join(" ").toLowerCase();
-      return `<label class="chk qitem ${locked?"locked":""}" data-search="${esc(search)}" data-qid="${esc(String(it.id))}" data-qflags="${flags}"${other?` data-qother="${esc(String(other.id))}"`:""}${preGroups.length?` data-prereq="${esc(preGroups.map(g=>g.join(",")).join("|"))}"`:""}>
+      return `<label class="chk qitem ${locked?"locked":""}" data-search="${esc(search)}" data-qid="${esc(String(it.id))}" data-qflags="${flags}"${other?` data-qother="${esc(String(other.id))}"`:""}${preGroups.length?` data-prereq="${esc(preGroups.map(g=>g.join(",")).join("|"))}" data-prereq-title="${esc(preTitle)}"`:""}${chapter?` data-chapter="${chapter}"`:""}>
         <input type="checkbox" data-q="${esc(String(it.id))}" ${isQuestDone(it.id)?"checked":""} ${locked?"disabled":""}>
         <span class="qbody">
-          <span class="qname">${esc(it.n)}${it.t?' <i class="qbadge t">限时</i>':""}${it.x?` <i class="qbadge x" title="与「${esc(other?other.n:"同组另一条")}」互斥">二选一</i>`:""}${it.s?' <i class="qbadge s">剧情</i>':""}${it.ns2?' <i class="qbadge ns2">NS2</i>':""}${it.v?' <i class="qbadge v" title="中文译名待核">?</i>':""}${preIds.length?` <i class="qbadge lock" data-lockbadge style="${preLocked?"":"display:none"}" title="前置：${esc(preTitle)}">前置未完成</i>`:""}</span>
+          <span class="qname">${esc(it.n)}${it.t?' <i class="qbadge t">限时</i>':""}${it.x?` <i class="qbadge x" title="与「${esc(other?other.n:"同组另一条")}」互斥">二选一</i>`:""}${it.s?' <i class="qbadge s">剧情</i>':""}${it.ns2?' <i class="qbadge ns2">NS2</i>':""}${it.v?' <i class="qbadge v" title="中文译名待核">?</i>':""}${(preGroups.length||chapter)?` <i class="qbadge lock" data-lockbadge style="${(preLocked||chapterLocked)?"":"display:none"}" title="${preLocked?`前置：${esc(preTitle)}`:`在流程页勾选第 ${chapter} 章后解锁`}">${preLocked?"前置未完成":`第 ${chapter} 章未完成`}</i>`:""}</span>
           <span class="qmeta">${giver?`<span class="qgiver">${esc(giver)}</span>`:""}${it.d?`<span class="qdeadline">期限：${esc(it.d)}</span>`:""}</span>
           ${condText?`<span class="qcond">${esc(condText)}</span>`:""}
           <span class="qreward">奖励：${esc(rewardText)}</span>
@@ -286,7 +289,7 @@ function questSectionHTML(g){
     <button class="qchip" data-qexpand="0">收起全部</button>
   </div>
   <div id="qgroups">${body}</div>
-  <p class="qfoot"><span class="star">?</span> 标记的 6 条是中文维基缺页或 NS2 新增，中文名与奖励名为暂拟，游戏内以实际显示为准。奖励列任务菜单里的金钱 / EXP / 评价 / 道具；道具名后的 [0]/[1]/[2] 是装备插槽数，第５性格等额外解锁标在奖励末尾，未标出的以游戏内为准。勾选「二选一」中的一条后，另一条会自动锁定；想换分支，先取消已勾的那条。任务卡上的「影响」写明选这条后能接或会消失的后续。带「前置未完成」的任务，完成前置后自动解锁。本表不含《相连的未来》的 43 个支线（均无时限、无二选一）。</p>`;
+  <p class="qfoot"><span class="star">?</span> 标记的 6 条是中文维基缺页或 NS2 新增，中文名与奖励名为暂拟，游戏内以实际显示为准。奖励列任务菜单里的金钱 / EXP / 评价 / 道具；道具名后的 [0]/[1]/[2] 是装备插槽数，第５性格等额外解锁标在奖励末尾，未标出的以游戏内为准。勾选「二选一」中的一条后，另一条会自动锁定；想换分支，先取消已勾的那条。任务卡上的「影响」写明选这条后能接或会消失的后续。章节条件与流程页联动：第 X 章未勾选时任务锁定，勾上该章后解锁。带「前置未完成」的任务，完成前置后自动解锁。本表不含《相连的未来》的 43 个支线（均无时限、无二选一）。</p>`;
 }
 
 function fvSectionHTML(g){
@@ -760,12 +763,19 @@ function syncQuestLocks(){
     const prereq=(el.dataset.prereq||"").split("|").filter(Boolean).map(g=>g.split(",").filter(Boolean));
     const pairLocked=!!other&&!isQuestDone(self)&&isQuestDone(other);
     const preLocked=prereq.length>0&&!isQuestDone(self)&&!prereq.every(g=>g.some(x=>isQuestDone(x)));
-    const locked=pairLocked||preLocked;
+    const chapter=Number(el.dataset.chapter||0);
+    const chapterLocked=chapter>0&&!isQuestDone(self)&&!isDone("x"+(chapter+1));
+    const locked=pairLocked||preLocked||chapterLocked;
     el.classList.toggle("locked",locked);
-    el.dataset.lockreason=pairLocked?"exclusive":(preLocked?"prereq":"");
+    el.dataset.lockreason=pairLocked?"exclusive":(preLocked?"prereq":(chapterLocked?"chapter":""));
     const cb=el.querySelector("input[data-q]"); if(cb)cb.disabled=locked;
     const badge=el.querySelector("[data-lockbadge]");
-    if(badge)badge.style.display=preLocked?"":"none";
+    if(badge){
+      const show=preLocked||chapterLocked;
+      badge.style.display=show?"":"none";
+      badge.textContent=preLocked?"前置未完成":(chapterLocked?`第 ${chapter} 章未完成`:"");
+      badge.title=preLocked?("前置："+(el.dataset.prereqTitle||"")):(chapterLocked?`在流程页勾选第 ${chapter} 章后解锁`:"");
+    }
   });
 }
 
@@ -1104,7 +1114,7 @@ function build(){
       save();
       btn.closest(".chapter").classList.toggle("done",isDone(id));
       btn.setAttribute("aria-pressed",isDone(id));
-      renderProgress();renderToc();updateNext();
+      renderProgress();renderToc();updateNext();syncQuestLocks();
     };
   });
   // 默认展开第一个未完成
