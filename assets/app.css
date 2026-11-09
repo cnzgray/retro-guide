@@ -196,8 +196,36 @@
   label.qitem .qname{display:block;font-size:14px;color:#c6d1de;line-height:1.45}
   label.qitem .qmeta{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:3px;font-size:11.5px;color:#6d7989;line-height:1.5}
   label.qitem .qreward{display:block;margin-top:2px;font-size:11.5px;color:#8f9dab;line-height:1.55}
+  label.qitem .qcond{display:block;margin-top:2px;font-size:11.5px;color:#7f93a6;line-height:1.55}
+  label.qitem .qobj{display:block;margin-top:1px;font-size:11.5px;color:#77828e;line-height:1.55}
   label.qitem .qgiver{color:#8593a4}
   label.qitem .qdeadline{color:#d9b979}
+  .btem{padding:8px 9px;border-radius:9px}
+  .btem:hover{background:#181e26}
+  .bhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .bhead b{font-size:14px;color:#c6d1de;line-height:1.45}
+  .bhp{font-size:11.5px;color:#6d7989}
+  .dchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+  .dchip{font-size:11px;line-height:1.5;padding:1px 5px;border-radius:5px;background:var(--a06);border:1px solid var(--line);color:#8f9dab}
+  .dchip[data-k="素材"]{color:#9fc7a0}
+  .dchip[data-k="U武器"],.dchip[data-k="U装备"]{color:#d9b979}
+  .dchip[data-k="战技书"]{color:#c7a6ff}
+  .qbadge.lv{color:#9fc7ff;background:rgba(122,184,255,.08);border-color:rgba(122,184,255,.28)}
+  .sblock{margin:0 0 26px}
+  .ssec{display:flex;align-items:baseline;gap:8px;font-size:16px;color:var(--acc);margin:0 0 8px}
+  .ssec span{font-size:12px;color:#6d7989}
+  .sitem{padding:7px 9px;border-radius:9px}
+  .sitem:hover{background:#181e26}
+  .sitem b{display:block;font-size:13.5px;color:#c6d1de;line-height:1.45}
+  .smeta{display:block;margin-top:2px;font-size:11.5px;color:#7f93a6;line-height:1.5}
+  .sdesc{display:block;margin-top:2px;font-size:11.5px;color:#77828e;line-height:1.55}
+  label.fitem{padding:8px 9px;align-items:flex-start}
+  label.fitem .qbody{flex:1;min-width:0;display:block}
+  label.fitem .qname{display:block;font-size:14px;color:#c6d1de;line-height:1.45}
+  label.fitem .qmeta{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:3px;font-size:11.5px;color:#6d7989;line-height:1.5}
+  label.fitem .qreward{display:block;margin-top:2px;font-size:11.5px;color:#8f9dab;line-height:1.55}
+  label.fitem .qcond{display:block;margin-top:2px;font-size:11.5px;color:#7f93a6;line-height:1.55}
+  label.fitem .qobj{display:block;margin-top:1px;font-size:11.5px;color:#77828e;line-height:1.55}
   .qbadge{font-style:normal;font-size:10.5px;line-height:1.4;padding:1px 5px;border-radius:5px;border:1px solid transparent;white-space:nowrap}
   .qbadge.t{color:var(--acc2);background:rgba(255,200,97,.08);border-color:rgba(255,200,97,.28)}
   .qbadge.x{color:#ff9d9d;background:rgba(255,138,138,.08);border-color:rgba(255,138,138,.3)}

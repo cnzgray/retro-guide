@@ -40,6 +40,8 @@
 | [iMore《Xenoblade Chronicles: Definitive Edition — Affinity Guide》](https://www.imore.com/xenoblade-chronicles-definitive-edition-affinity-guide) | 牵绊等级、战斗/任务/送礼的牵绊收益数值 |
 | [TheGamer《Best Gifts For Each Character》](https://www.thegamer.com/xenoblade-chronicles-definitive-edition-gift-guide/) | 各角色喜欢的收集品与送礼数值 |
 | [Gamer Guides《Heart-to-Hearts - Colony 6》](https://www.gamerguides.com/xenoblade-chronicles-definitive-edition/guide/affinity-chart/colony-6/heart-to-hearts) | 殖民地6 牵绊对话的复兴等级前置 |
+| [Xeno Series Wiki《Quest (XC1)》相连未来任务](https://www.xenoserieswiki.org/wiki/Quest_(XC1)) | 相连未来 43 条支线的名称、类型、地点、委托人、前置、步骤与奖励 |
+| [Game8《Future Connected Walkthrough》](https://game8.co/games/Xenoblade-Chronicles-Definitive-Edition/archives/289428) | 相连未来四部流程、Boss 与诺彭调查队顺序 |
 | [Serebii.net《Pokémon Pokopia》资料库](https://www.serebii.net/pokemonpokopia/) | Pokopia 重要委托、入会挑战、技能、传说、活动档期、图鉴与栖息地、物品出处（[物品库](https://www.serebii.net/pokemonpokopia/items.shtml)）、喜好类别（[Favorites](https://www.serebii.net/pokemonpokopia/favorites.shtml)） |
 | [Pokopia 攻略 Wiki（繁中）](https://pokopia.gamertw.com/zh-TW/item) | Pokopia 物品中文名、出处、商店/鉴定/交易等方式 |
 | [Game8《Pokémon Pokopia》攻略](https://game8.co/games/Pokemon-Pokopia/archives/583158) | Pokopia 分镇流程、Bubbly Basin 流程 |

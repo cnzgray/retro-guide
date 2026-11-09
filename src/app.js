@@ -52,7 +52,7 @@ const npcList=()=>state.npcs[gid()]||(state.npcs[gid()]={});
 const isNpcDone=id=>!!npcList()[String(id)];
 const ARMOR_CLASS={"轻":"轻型","中":"中型","重":"重型","机":"机界"};
 function panels(g){
-  return [["flow","流程"],...(g.quests?[["quests","任务"]]:[]),...(g.bonds?[["bonds",g.bondMeta?.tab||"牵绊"]]:[]),...(g.npcs?[["npcs",g.npcMeta?.tab||"NPC"]]:[]),["help",g.tips?"急救与技巧":"急救"],...(g.catalog?[["catalog",g.catalogMeta?.tab||"物品"]]:[]),...(g.items?[["items",g.itemsMeta?.tab||"物品"]]:[]),["collect","收集"],["boss",g.bossMeta?.tab||"Boss"]];
+  return [["flow","流程"],...(g.quests?[["quests","任务"]]:[]),...(g.bonds?[["bonds",g.bondMeta?.tab||"牵绊"]]:[]),...(g.npcs?[["npcs",g.npcMeta?.tab||"NPC"]]:[]),...(g.bestiary?[["bestiary",g.bestiaryMeta?.tab||"珍稀种"]]:[]),...(g.systems?[["systems",g.systemsMeta?.tab||"系统"]]:[]),["help",g.tips?"急救与技巧":"急救"],...(g.catalog?[["catalog",g.catalogMeta?.tab||"物品"]]:[]),...(g.items?[["items",g.itemsMeta?.tab||"物品"]]:[]),["collect","收集"],["boss",g.bossMeta?.tab||"Boss"]];
 }
 function showPanel(id,remember=true){
   const g=game();
@@ -89,6 +89,8 @@ function renderToc(){
     ${g.quests?`<a href="#quests" data-go="quests">全任务</a>`:""}
     ${g.bonds?`<a href="#bonds" data-go="bonds">${esc(g.bondMeta?.title||"全牵绊对话")}</a>`:""}
     ${g.npcs?`<a href="#npcs" data-go="npcs">${esc(g.npcMeta?.title||"全 NPC 一览")}</a>`:""}
+    ${g.bestiary?`<a href="#bestiary" data-go="bestiary">${esc(g.bestiaryMeta?.title||"珍稀种速查")}</a>`:""}
+    ${g.systems?`<a href="#systems" data-go="systems">${esc(g.systemsMeta?.title||"系统速查")}</a>`:""}
     <a href="#help" data-go="help">卡关急救</a>
     ${g.tips?`<a href="#tips" data-go="tips">小技巧</a>`:""}
     ${g.catalog?`<a href="#catalog" data-go="catalog">${esc(g.catalogMeta?.title||"全物品")}</a>`:""}
@@ -212,13 +214,17 @@ function questSectionHTML(g){
       if(it.f)reward.push("评价+"+it.f);
       if(it.rw&&it.rw.length)reward.push(...it.rw);
       const rewardText=reward.length?reward.join(" · "):(it.s?"剧情任务，无报酬":"无报酬");
-      const search=[it.n,giver,grp.area,it.d,rewardText,it.t?"限时":"",it.x?"二选一":"",it.s?"剧情":"",it.ns2?"NS2":""].filter(Boolean).join(" ").toLowerCase();
+      const condText=it.c?"接取："+it.c:"";
+      const objText=it.o&&it.o.length?"目标："+it.o.slice(0,4).join(" / ")+(it.o.length>4?" …":""):"";
+      const search=[it.n,giver,grp.area,it.d,rewardText,it.c,objText,it.t?"限时":"",it.x?"二选一":"",it.s?"剧情":"",it.ns2?"NS2":""].filter(Boolean).join(" ").toLowerCase();
       return `<label class="chk qitem ${locked?"locked":""}" data-search="${esc(search)}" data-qid="${esc(String(it.id))}" data-qflags="${flags}"${other?` data-qother="${esc(String(other.id))}"`:""}>
         <input type="checkbox" data-q="${esc(String(it.id))}" ${isQuestDone(it.id)?"checked":""} ${locked?"disabled":""}>
         <span class="qbody">
           <span class="qname">${esc(it.n)}${it.t?' <i class="qbadge t">限时</i>':""}${it.x?' <i class="qbadge x">二选一</i>':""}${it.s?' <i class="qbadge s">剧情</i>':""}${it.ns2?' <i class="qbadge ns2">NS2</i>':""}${it.v?' <i class="qbadge v" title="中文译名待核">?</i>':""}</span>
           <span class="qmeta">${giver?`<span class="qgiver">${esc(giver)}</span>`:""}${it.d?`<span class="qdeadline">期限：${esc(it.d)}</span>`:""}</span>
+          ${condText?`<span class="qcond">${esc(condText)}</span>`:""}
           <span class="qreward">奖励：${esc(rewardText)}</span>
+          ${objText?`<span class="qobj">${esc(objText)}</span>`:""}
         </span>
       </label>`;
     }).join("");
@@ -242,6 +248,73 @@ function questSectionHTML(g){
   </div>
   <div id="qgroups">${body}</div>
   <p class="qfoot"><span class="star">?</span> 标记的 6 条是中文维基缺页或 NS2 新增，中文名与奖励名为暂拟，游戏内以实际显示为准。奖励列任务菜单里的金钱 / EXP / 评价 / 道具；道具名后的 [0]/[1]/[2] 是装备插槽数，第５性格等额外解锁标在奖励末尾，未标出的以游戏内为准。勾选「二选一」中的一条后，另一条会自动锁定；想换分支，先取消已勾的那条。本表不含《相连的未来》的 43 个支线（均无时限、无二选一）。</p>`;
+}
+
+function fvSectionHTML(g){
+  const root=g.fvQuests;
+  const done=root.filter(it=>isQuestDone(it.id)).length;
+  const items=root.map(it=>{
+    const meta=[it.type,it.loc,it.g?"委托人 "+it.g:"",it.lv?"推荐 Lv"+it.lv:""].filter(Boolean).join(" · ");
+    const reward=it.rw&&it.rw.length?it.rw.join(" · "):"无报酬";
+    const pre=it.pre&&it.pre.length?`<span class="qcond">${esc(it.pre.join(" · "))}</span>`:"";
+    const obj=it.o&&it.o.length?`<span class="qobj">目标：${esc(it.o.slice(0,4).join(" / "))}${it.o.length>4?" …":""}</span>`:"";
+    const search=[it.n,it.type,it.loc,it.g,it.lv,it.pre&&it.pre.join(" "),it.o&&it.o.join(" "),reward].filter(Boolean).join(" ").toLowerCase();
+    return `<label class="chk fitem" data-search="${esc(search)}">
+      <input type="checkbox" data-fv="${esc(it.id)}" ${isQuestDone(it.id)?"checked":""}>
+      <span class="qbody">
+        <span class="qname">${esc(it.n)} <i class="qbadge s">${esc(it.type)}</i></span>
+        <span class="qmeta">${esc(meta)}</span>
+        ${pre}${obj}
+        <span class="qreward">奖励：${esc(reward)}</span>
+      </span>
+    </label>`;
+  }).join("");
+  return `<div class="qhead">
+    <div class="qstats"><b id="fvdone">${done}</b><span>/ ${root.length} 条</span><span class="qmax">不计入主任务统计</span></div>
+    <div class="qnote">${g.fvMeta?.note||""}</div>
+  </div>
+  <details class="qgroup" open><summary><span class="qarea">相连的未来 · 支线</span><span class="qcnt">${root.length}</span></summary><div class="qitems">${items}</div></details>
+  <p class="qfoot">${g.fvMeta?.foot||""}</p>`;
+}
+
+function bestiaryHTML(g){
+  const all=g.bestiary.flatMap(grp=>grp.items);
+  const fv=g.bestiary.find(x=>x.area==="巨神肩");
+  const fvN=fv?fv.items.length:0;
+  const body=g.bestiary.map(grp=>{
+    const items=grp.items.map(it=>{
+      const search=[it.n,grp.area,"Lv"+it.lv,"HP"+it.hp,...it.d].join(" ").toLowerCase();
+      const chips=it.d.map(x=>{
+        const k=x.split(" ")[0];
+        return `<span class="dchip" data-k="${esc(k)}">${esc(x)}</span>`;
+      }).join("");
+      return `<div class="btem" data-search="${esc(search)}">
+        <div class="bhead"><b>${esc(it.n)}</b><span class="qbadge lv">Lv ${it.lv}</span><span class="bhp">HP ${it.hp.toLocaleString()}</span></div>
+        <div class="dchips">${chips}</div>
+      </div>`;
+    }).join("");
+    return `<details class="qgroup"><summary><span class="qarea">${esc(grp.area)}</span><span class="qcnt">${grp.items.length} 只</span></summary><div class="qitems">${items}</div></details>`;
+  }).join("");
+  return `<div class="qhead">
+    <div class="qstats"><b>${all.length}</b><span>只珍稀种</span><span class="qmax">本篇 ${all.length-fvN} · 相连的未来 ${fvN}</span></div>
+    <div class="qnote">${g.bestiaryMeta?.note||""}</div>
+  </div>
+  <div id="bgroups">${body}</div>
+  <p class="qfoot">${g.bestiaryMeta?.foot||""}</p>`;
+}
+
+function systemsHTML(g){
+  return g.systems.map(sys=>{
+    const cnt=sys.groups.reduce((n,x)=>n+x.items.length,0);
+    const groups=sys.groups.map(grp=>{
+      const items=grp.items.map(it=>{
+        const search=[it.n,it.meta,it.desc,grp.t,sys.t].filter(Boolean).join(" ").toLowerCase();
+        return `<div class="sitem" data-search="${esc(search)}"><b>${esc(it.n)}</b>${it.meta?`<span class="smeta">${esc(it.meta)}</span>`:""}${it.desc?`<span class="sdesc">${esc(it.desc)}</span>`:""}</div>`;
+      }).join("");
+      return `<details class="qgroup"><summary><span class="qarea">${esc(grp.t)}</span><span class="qcnt">${grp.items.length}</span></summary><div class="qitems">${items}</div></details>`;
+    }).join("");
+    return `<section class="sblock"><h3 class="ssec">${esc(sys.t)}<span>${cnt}</span></h3>${sys.note?`<p class="qnote">${esc(sys.note)}</p>`:""}${groups}</section>`;
+  }).join("");
 }
 
 function affinityLevel(pts){
@@ -666,12 +739,16 @@ function applyQuestFilter(filter){
     if(ok&&q)ok=el.dataset.search.includes(q);
     el.classList.toggle("hidden",!ok);
   });
+  document.querySelectorAll("#quests .fitem").forEach(el=>{
+    const ok=!q||el.dataset.search.includes(q);
+    el.classList.toggle("hidden",!ok);
+  });
   document.querySelectorAll("#quests details.qgroup").forEach(d=>{
-    const any=[...d.querySelectorAll(".qitem")].some(el=>!el.classList.contains("hidden"));
+    const any=[...d.querySelectorAll(".qitem,.fitem")].some(el=>!el.classList.contains("hidden"));
     d.classList.toggle("hidden",!any);
     if((q||questFilter!=="all")&&any)d.open=true;
   });
-  const any=document.querySelectorAll("#quests .qitem:not(.hidden)").length;
+  const any=document.querySelectorAll("#quests .qitem:not(.hidden),#quests .fitem:not(.hidden)").length;
   let nr=document.getElementById("qnores");
   if(!any&&(q||questFilter!=="all")){
     if(!nr){nr=document.createElement("div");nr.id="qnores";nr.className="nores";nr.textContent="没有匹配的任务，换个筛选或关键词";$("#qgroups").appendChild(nr);}
@@ -709,6 +786,19 @@ function bindQuestEvents(){
       const open=x.dataset.qexpand==="1";
       root.querySelectorAll("details.qgroup").forEach(d=>{if(!d.classList.contains("hidden"))d.open=open;});
     }
+  });
+}
+
+function bindFvEvents(){
+  const root=$("#quests"); if(!root)return;
+  root.querySelectorAll("input[data-fv]").forEach(cb=>{
+    cb.onchange=()=>{
+      const list=questList();
+      if(cb.checked)list[cb.dataset.fv]=1;else delete list[cb.dataset.fv];
+      save();
+      const el=$("#fvdone");
+      if(el)el.textContent=root.querySelectorAll("input[data-fv]:checked").length;
+    };
   });
 }
 
@@ -909,9 +999,11 @@ function build(){
   <div id="chapters">${g.chapters.length?g.chapters.map(c=>chapterHTML(c,g)).join(""):'<div class="nores">内容整理中…</div>'}</div>
   </div>
 
-  ${g.quests?`<section id="quests" data-panel="quests"><h2 class="sec">全任务</h2>${questSectionHTML(g)}</section>`:""}
+  ${g.quests?`<section id="quests" data-panel="quests"><h2 class="sec">全任务</h2>${questSectionHTML(g)}${g.fvQuests?fvSectionHTML(g):""}</section>`:""}
   ${g.bonds?`<section id="bonds" data-panel="bonds"><h2 class="sec">${esc(g.bondMeta?.title||"全牵绊对话")}</h2>${bondsHTML(g)}</section>`:""}
   ${g.npcs?`<section id="npcs" data-panel="npcs"><h2 class="sec">${esc(g.npcMeta?.title||"全 NPC 一览")}</h2>${npcsHTML(g)}</section>`:""}
+  ${g.bestiary?`<section id="bestiary" data-panel="bestiary"><h2 class="sec">${esc(g.bestiaryMeta?.title||"珍稀种速查")}</h2>${bestiaryHTML(g)}</section>`:""}
+  ${g.systems?`<section id="systems" data-panel="systems"><h2 class="sec">${esc(g.systemsMeta?.title||"系统速查")}</h2>${systemsHTML(g)}</section>`:""}
 
   <div data-panel="help">
   <h2 class="sec" id="help">卡关急救</h2>
@@ -982,6 +1074,7 @@ function build(){
   });
   updateCounts();
   bindQuestEvents();
+  bindFvEvents();
   bindBondEvents();
   bindNpcEvents();
   bindCatalogEvents();
@@ -1044,6 +1137,11 @@ function applySearch(q){
   const ihits=document.querySelectorAll("#catalog .citem:not(.hidden)").length;
   const xhits=document.querySelectorAll("#items .citem:not(.hidden)").length;
   document.querySelectorAll("details.qa,details.tipcard").forEach(d=>{d.open=!!q&&!d.classList.contains("hidden");});
+  document.querySelectorAll("#bestiary details.qgroup,#systems details.qgroup").forEach(d=>{
+    const any=[...d.querySelectorAll("[data-search]")].some(el=>!el.classList.contains("hidden"));
+    d.classList.toggle("hidden",!any);
+    if(q&&any)d.open=true;
+  });
   document.querySelectorAll("#main [data-panel]").forEach(p=>{
     if(q)p.classList.toggle("hidden",!p.querySelector("[data-search]:not(.hidden)"));
   });

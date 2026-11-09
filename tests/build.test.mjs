@@ -103,11 +103,11 @@ test("任务 id 重复", (t) => {
 });
 
 test("二选一组不是 2 条", (t) => {
-  assertFails(t, XENOBLADE, (s) => s.replace('"恋爱成就·男性篇",g:"阿道夫",t:1,x:"c9-1"', '"恋爱成就·男性篇",g:"阿道夫",t:1'), /二选一组 c9-1 必须有 2 条任务/);
+  assertFails(t, XENOBLADE, (s) => s.replace(',x:"c9-1"', ''), /二选一组 c9-1 必须有 2 条任务/);
 });
 
 test("限时任务缺期限", (t) => {
-  assertFails(t, XENOBLADE, (s) => s.replace('"服药时间",g:"奥尔嘉",t:1,d:"第５章 离开逃生艇营地前"', '"服药时间",g:"奥尔嘉",t:1'), /任务 116 是限时任务，需要 d/);
+  assertFails(t, XENOBLADE, (s) => s.replace(/(\{id:116,n:"服药时间"[^}]*?),t:1,d:"[^"]*"/, "$1,t:1"), /任务 116 是限时任务，需要 d/);
 });
 
 test("物品类型重复", (t) => {

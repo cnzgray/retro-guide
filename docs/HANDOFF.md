@@ -20,7 +20,7 @@
 | `games/index.js`、`games/<id>.js` | 浏览器端游戏列表与各作数据，由 `src/games/*.js` 包装成经典脚本 |
 | `top_x_ce_walkthrough.md` | 《幻想传说 X》日文 wiki 整理稿（552 行），含第 1 部逐项宝箱清单、时限要素速查表。是内容回溯的**事实源** |
 
-功能：章节卡（可折叠、✓ 标记完成、顶部进度条、"现在该做第几章"）、卡关急救折叠 Q&A、可勾选收集清单、Boss 速查表、异度之刃的「全任务」追踪（481 条 / 17 区域 / 130 限时 / 25 组二选一，按区域折叠、按时限/二选一/完成度筛选、勾一条自动锁另一分支）、「牵绊」追踪（63 条 / 15 区域 / 6 条仅夜间，按区域折叠，按状态/角色/等级筛选，组头标区域时限）与「NPC」追踪（164 名 / 12 个活动区域 / 4 种族，按区域折叠，按登记/任务/交易/区域/种族/昼夜筛选）、顶栏搜索（同时搜章节/Q&A/清单/Boss/任务/牵绊/NPC）。进度存 `localStorage`（key `retroGuide.v1`），选中游戏也会记住。
+功能：章节卡（可折叠、✓ 标记完成、顶部进度条、"现在该做第几章"）、卡关急救折叠 Q&A、可勾选收集清单、Boss 速查表、异度之刃的「全任务」追踪（481 条 / 17 区域 / 130 限时 / 25 组二选一，按区域折叠、按时限/二选一/完成度筛选、勾一条自动锁另一分支）、「牵绊」追踪（63 条 / 15 区域 / 6 条仅夜间，按区域折叠，按状态/角色/等级筛选，组头标区域时限）与「NPC」追踪（164 名 / 12 个活动区域 / 4 种族，按区域折叠，按登记/任务/交易/区域/种族/昼夜筛选）、顶栏搜索（同时搜章节/Q&A/清单/Boss/任务/牵绊/NPC/珍稀种/系统）。进度存 `localStorage`（key `retroGuide.v1`），选中游戏也会记住。
 
 ## 3. 已定的设计约定（改动前请先确认，别随手推翻）
 
@@ -56,6 +56,9 @@
 7. **异度之刃 Boss 中文名**已按蒙纳多研究本部的主线攻略对齐；「相连的未来」43 个支线未逐条列入任务表（均无时限、无二选一）。
 7.1 **异度之刃牵绊对话** 63 条按区域列出，中文名取 Xeno Series Wiki 的简体中文字段，地点是中文描述，未逐条进游戏对照。皇都封锁后能否补看，攻略站说法不一；本页按「第１５章前清完皇都 6 条」的稳妥路线标注。刷牵绊数值来自 iMore 与 TheGamer，版本差异以游戏内为准。
 7.2 **异度之刃 NPC** 164 名取中文维基 NPC 命名空间，未逐条进游戏核对。同一 NPC 可能有多条作息/状态（剧情、任务分支、移民前后），页面全部列出并标「状态」；6:00–6:00 多为全天或任务期间。交易只列件数与最高星级。
+7.3 **异度之刃珍稀种** 177 只（本篇 157 + 相连的未来 20）取蒙纳多研究本部敌人页，含等级、HP 与筛选后的掉落（素材、结晶、U 武器/装备、战技书）。出现条件（天气/时间）未收录，具体位置以游戏内地图为准；S 武器/防具是随机词条，未逐条列出。
+7.4 **异度之刃系统页** 的宝珠 88 条、战技 138 条、商店 1126 件、挑战战斗 20 条、性格 35 条、诺彭调查队 12 人都取蒙纳多研究本部与 Xeno Series Wiki，未逐条进游戏核对。商店商品随剧情、殖民地等级与昼夜变化，以游戏内为准。
+7.5 **相连的未来** 43 条支线取 Xeno Series Wiki，任务名与 NPC 名保留英文（中文维基无此章节条目），步骤按中文动作模板翻译；四部流程取 Game8。任务页底部单列，勾选独立记进度，不计入主任务统计。
 8. 用户若想换配色，只需给一个色相倾向（紫/红/青），改对应游戏的 `theme` 对象即可。
 9. 可选扩展：加更多游戏（同一套结构，报名字即可）、把地图/路线画进页面、导出 A5 小册子、做成 PWA（需 http 托管才能装）。
 
@@ -69,7 +72,7 @@ python3 -m http.server 8765      # 工作区根目录
 # 然后浏览器打开 http://127.0.0.1:8765/index.html
 ```
 
-- 本环境优先用 DOM 断言验证：节点数量、`getComputedStyle` 取 `--acc`/`backgroundColor`、`localStorage` 往返、`scrollWidth > innerWidth` 查横向溢出；异度之刃再断言 481 条任务、130 限时、50 条二选一、勾一条锁另一条、牵绊 63 条 / 15 区域 / 6 条仅夜间、「菲奥伦」18 条、「粉」21 条、NPC 164 名 / 12 个活动区域 / 4 种族、「有任务」135 名、「诺彭」58 名、全物品 1504 件 / 7 类、小技巧 22 张，搜「甜山葵」「普攻自动」「刷牵绊」「帕欧菈」能命中。
+- 本环境优先用 DOM 断言验证：节点数量、`getComputedStyle` 取 `--acc`/`backgroundColor`、`localStorage` 往返、`scrollWidth > innerWidth` 查横向溢出；异度之刃再断言 481 条任务、475 条接取条件、130 限时、50 条二选一、勾一条锁另一条、相连未来 43 条、牵绊 63 条 / 15 区域 / 6 条仅夜间、「菲奥伦」18 条、「粉」21 条、NPC 164 名 / 12 个活动区域 / 4 种族、「有任务」135 名、「诺彭」58 名、珍稀种 177 只 / 20 区域、系统 6 类（宝珠 88 / 战技 138 / 商店 1126 / 挑战 20 / 性格 35 / 诺彭 12）、全物品 1504 件 / 7 类、小技巧 23 张，搜「甜山葵」「普攻自动」「刷牵绊」「帕欧菈」「七星的古森」「Wunwun」能命中。
 - 自动化工具可能拒绝 `file://`，回归走本地 http；另外用 Chrome 直接打开 `file://` 确认 `index.html` + `assets/` + `games/` 能正常加载。
 - 拷机形态：把 `index.html`、`assets/`、`games/` 三样一起拷到一个目录，打开 `index.html`。只拷 `index.html` 会没有样式、脚本和数据。
 - 回归检查清单见 `AGENTS.md` 的完成标准。
@@ -94,4 +97,6 @@ python3 -m http.server 8765      # 工作区根目录
 - 牵绊等级、战斗/任务/送礼收益：[iMore《Xenoblade Chronicles: Definitive Edition — Affinity Guide》](https://www.imore.com/xenoblade-chronicles-definitive-edition-affinity-guide)
 - 各角色喜欢的收集品与送礼数值：[TheGamer《Best Gifts For Each Character》](https://www.thegamer.com/xenoblade-chronicles-definitive-edition-gift-guide/)
 - 殖民地6 牵绊对话的复兴等级前置：[Gamer Guides《Heart-to-Hearts - Colony 6》](https://www.gamerguides.com/xenoblade-chronicles-definitive-edition/guide/affinity-chart/colony-6/heart-to-hearts)
+- 相连未来 43 条支线（名称、类型、地点、委托人、前置、步骤、奖励）：[Xeno Series Wiki《Quest (XC1)》](https://www.xenoserieswiki.org/wiki/Quest_(XC1))
+- 相连未来四部流程、Boss 与诺彭调查队顺序：[Game8《Future Connected Walkthrough》](https://game8.co/games/Xenoblade-Chronicles-Definitive-Edition/archives/289428)
 - 汉化版存在性：CHS 补丁，PSP 编号 `ULJS00293`
