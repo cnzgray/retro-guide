@@ -198,6 +198,7 @@
   label.qitem .qreward{display:block;margin-top:2px;font-size:11.5px;color:#8f9dab;line-height:1.55}
   label.qitem .qcond{display:block;margin-top:2px;font-size:11.5px;color:#7f93a6;line-height:1.55}
   label.qitem .qobj{display:block;margin-top:1px;font-size:11.5px;color:#77828e;line-height:1.55}
+  label.qitem .qimpact{display:block;margin-top:2px;font-size:11.5px;color:#d9b979;line-height:1.55}
   label.qitem .qgiver{color:#8593a4}
   label.qitem .qdeadline{color:#d9b979}
   .btem{padding:8px 9px;border-radius:9px}

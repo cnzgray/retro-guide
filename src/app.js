@@ -248,14 +248,15 @@ function questSectionHTML(g){
       const rewardText=reward.length?reward.join(" · "):(it.s?"剧情任务，无报酬":"无报酬");
       const condText=it.c?"接取："+it.c:"";
       const objText=it.o&&it.o.length?"目标："+it.o.slice(0,4).join(" / ")+(it.o.length>4?" …":""):"";
-      const search=[it.n,giver,grp.area,it.d,rewardText,it.c,objText,it.t?"限时":"",it.x?"二选一":"",it.s?"剧情":"",it.ns2?"NS2":""].filter(Boolean).join(" ").toLowerCase();
+      const search=[it.n,giver,grp.area,it.d,rewardText,it.c,it.xi,objText,it.t?"限时":"",it.x?"二选一":"",it.s?"剧情":"",it.ns2?"NS2":""].filter(Boolean).join(" ").toLowerCase();
       return `<label class="chk qitem ${locked?"locked":""}" data-search="${esc(search)}" data-qid="${esc(String(it.id))}" data-qflags="${flags}"${other?` data-qother="${esc(String(other.id))}"`:""}${preIds.length?` data-prereq="${esc(preIds.join(","))}"`:""}>
         <input type="checkbox" data-q="${esc(String(it.id))}" ${isQuestDone(it.id)?"checked":""} ${locked?"disabled":""}>
         <span class="qbody">
-          <span class="qname">${esc(it.n)}${it.t?' <i class="qbadge t">限时</i>':""}${it.x?' <i class="qbadge x">二选一</i>':""}${it.s?' <i class="qbadge s">剧情</i>':""}${it.ns2?' <i class="qbadge ns2">NS2</i>':""}${it.v?' <i class="qbadge v" title="中文译名待核">?</i>':""}${preIds.length?` <i class="qbadge lock" data-lockbadge style="${preLocked?"":"display:none"}" title="前置：${esc(preNames.join(" / "))}">前置未完成</i>`:""}</span>
+          <span class="qname">${esc(it.n)}${it.t?' <i class="qbadge t">限时</i>':""}${it.x?` <i class="qbadge x" title="与「${esc(other?other.n:"同组另一条")}」互斥">二选一</i>`:""}${it.s?' <i class="qbadge s">剧情</i>':""}${it.ns2?' <i class="qbadge ns2">NS2</i>':""}${it.v?' <i class="qbadge v" title="中文译名待核">?</i>':""}${preIds.length?` <i class="qbadge lock" data-lockbadge style="${preLocked?"":"display:none"}" title="前置：${esc(preNames.join(" / "))}">前置未完成</i>`:""}</span>
           <span class="qmeta">${giver?`<span class="qgiver">${esc(giver)}</span>`:""}${it.d?`<span class="qdeadline">期限：${esc(it.d)}</span>`:""}</span>
           ${condText?`<span class="qcond">${esc(condText)}</span>`:""}
           <span class="qreward">奖励：${esc(rewardText)}</span>
+          ${it.xi?`<span class="qimpact">影响：${esc(it.xi)}</span>`:""}
           ${objText?`<span class="qobj">${esc(objText)}</span>`:""}
         </span>
       </label>`;
@@ -279,7 +280,7 @@ function questSectionHTML(g){
     <button class="qchip" data-qexpand="0">收起全部</button>
   </div>
   <div id="qgroups">${body}</div>
-  <p class="qfoot"><span class="star">?</span> 标记的 6 条是中文维基缺页或 NS2 新增，中文名与奖励名为暂拟，游戏内以实际显示为准。奖励列任务菜单里的金钱 / EXP / 评价 / 道具；道具名后的 [0]/[1]/[2] 是装备插槽数，第５性格等额外解锁标在奖励末尾，未标出的以游戏内为准。勾选「二选一」中的一条后，另一条会自动锁定；想换分支，先取消已勾的那条。带「前置未完成」的任务，完成前置后自动解锁。本表不含《相连的未来》的 43 个支线（均无时限、无二选一）。</p>`;
+  <p class="qfoot"><span class="star">?</span> 标记的 6 条是中文维基缺页或 NS2 新增，中文名与奖励名为暂拟，游戏内以实际显示为准。奖励列任务菜单里的金钱 / EXP / 评价 / 道具；道具名后的 [0]/[1]/[2] 是装备插槽数，第５性格等额外解锁标在奖励末尾，未标出的以游戏内为准。勾选「二选一」中的一条后，另一条会自动锁定；想换分支，先取消已勾的那条。任务卡上的「影响」写明选这条后能接或会消失的后续。带「前置未完成」的任务，完成前置后自动解锁。本表不含《相连的未来》的 43 个支线（均无时限、无二选一）。</p>`;
 }
 
 function fvSectionHTML(g){

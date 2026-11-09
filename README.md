@@ -133,7 +133,7 @@ GAMES[]                     游戏
 ├─ sources[]                来源署名，须同时出现在页脚与 LICENSE-CONTENT.md
 ├─ unverified[]             可选，存疑事项，不渲染，`--verbose` 列出
 ├─ chapters[]               章节：{id, n, title, area, goal, steps[], items[], warn[], boss:{name,tip}, tip}
-├─ quests[]                 全任务：{area, items:[{id, n, g, t, x, s, ns2, v, d, m, e, f, rw[], c, o[]}]}
+├─ quests[]                 全任务：{area, items:[{id, n, g, t, x, s, ns2, v, d, m, e, f, rw[], c, o[], xi}]}
 ├─ bonds[]                  全牵绊对话：{area, warn?, items:[{id, n, loc, chars[2], pts, night, unlock, req?, alt?}]}
 ├─ bondMeta{}               牵绊区块文案：{title, tab, chars[], note, foot}
 ├─ npcs[]                   全 NPC：{area, items:[{id, n, race, sex, age, jobs[], schedules[{a,l,t}], gifts[], tradeCount, tradeMax, tradeTop[], variant?}]}
@@ -155,7 +155,7 @@ GAMES[]                     游戏
 ```
 
 - 章节 `id` 是进度持久化的键，**改名会丢掉用户已勾的进度**；id 与显示顺序无关，顺序由 `n` 决定。
-- `quests` 的 `id` 是任务进度的键，只增不删；`t` 标限时，`x` 是二选一组（同组必须正好 2 条），`s` 标剧情，`ns2` 标 NS2 新增，`v` 标译名待核，`d` 是期限文案，`m/e/f` 是金钱/EXP/评价，`rw` 是奖励道具数组，`c` 是接取条件（委托人/作息/地点/评价值/第 X 章后/前置任务），`o` 是目标清单。任务卡会按 `c` 里的「前置任务」自动锁定后置任务；前置完成（「或」分支任一完成）后自动解锁，已完成的任务不被锁。限时任务必须有 `d`（或所在组有 `d`）。
+- `quests` 的 `id` 是任务进度的键，只增不删；`t` 标限时，`x` 是二选一组（同组必须正好 2 条），`s` 标剧情，`ns2` 标 NS2 新增，`v` 标译名待核，`d` 是期限文案，`m/e/f` 是金钱/EXP/评价，`rw` 是奖励道具数组，`c` 是接取条件（委托人/作息/地点/评价值/第 X 章后/前置任务），`o` 是目标清单，`xi` 是二选一分支的后续影响说明（选这条能接或会消失的任务）。任务卡会按 `c` 里的「前置任务」自动锁定后置任务；前置完成（「或」分支任一完成）后自动解锁，已完成的任务不被锁。限时任务必须有 `d`（或所在组有 `d`）。
 - `bestiary` 是珍稀种表，按区域分组：`n` 名称、`lv` 等级、`hp` 血量、`d` 掉落数组（素材/结晶/U 武器/装备/战技书，含概率）。`bestiaryMeta` 定义标题、页签、说明与脚注。珍稀种不参与进度键。
 - `systems` 是系统速查表：`t` 分类（宝珠/战技/商店/挑战战斗/性格），`groups` 为子分组，条目统一为 `{n, meta, desc}`——名称、摘要行、细节行。`systemsMeta` 定义标题、页签、说明与脚注。系统表不参与进度键。
 - `bonds` 是异度之刃的牵绊对话表，按区域分组：`id` 是进度键，只增不删；`n` 名称、`loc` 具体地点、`chars` 两名角色、`pts` 所需牵绊值（500/1000/2000/3000/5000，渲染成黄/绿/青/紫/粉）、`night` 标仅夜间、`unlock` 开放章节/事件、`req` 额外的殖民地6 复兴条件、`alt` 另一版本说明。组上的 `warn` 是该区域的时限/封锁提醒。`bondMeta` 定义标题、页签、角色筛选表 `chars`、说明与脚注；`chars` 里必须有每条牵绊的两个人名，否则 `--check` 失败。牵绊进度存 `state.bonds`。
